@@ -12,9 +12,7 @@ class individu:
             card = (random.randint(0,9), random.randint(1,4))
             if card not in self.sum360:
                 self.sum36.add(card)
-        self.score = -1    
-        self.score36 = -1    
-        self.score360 = -1    
+        self.score = -1       
     
     def mutate(self):
         self.sum360.discard(random.choice(tuple( self.sum360)))
@@ -29,31 +27,26 @@ class individu:
                 self.sum36.add(card)
 
     def crossover(self, other) -> bool:
-        if random.randint(0,1)==1:
-            if other.sum36.isdisjoint(self.sum360):
-                self.sum36 = other.sum36.copy()
-                return True
-            else:
-                return False 
-        else:
-            if other.sum360.isdisjoint(self.sum36):
-                self.sum360 = other.sum360.copy()
-                return True
-            else:
-                return False
+        total36 = set().union(other.sum36, self.sum36)
+        total360 = set().union(other.sum360, self.sum360, other.sum36, self.sum36)
+        self.sum36 = set(random.sample(total36, 5))
+        for d in self.sum36:
+            total360.discard(d)
+        self.sum360 = set(random.sample(total360, 5))
+
 
     def evaluate(self):
         sum360=0.0
         for val, col in self.sum360:
-            sum360+=float(val)
+            sum360+=val
         sum36=0.0
         for val, col in self.sum36:
-            sum36+=float(val)
-        self.score360 = ((sum360 - 360.0)/360.0)**2
-        self.score36 = ((sum36 - 36.0)/36.0)**2
+            sum36+=val
+        score360 = ((sum360 - 360.0)/360.0)**2
+        score36 = ((sum36 - 36.0)/36.0)**2
         imp360=1.0
-        imp36=2.0
-        self.score = (imp360*(self.score360) + imp36*(self.score36))/(imp360+imp36)
+        imp36=10.0
+        self.score = (imp360*(score360) + imp36*(score36))/(imp360+imp36)
 
     def __lt__(self, other):
         if self.score == -1:
