@@ -1,6 +1,6 @@
 from caserne import caserne
-import numpy as np
-
+# import numpy as np
+import random
 Nindiv = 100
 
 epochs = 100
@@ -39,8 +39,8 @@ if __name__ == '__main__':
         newlist.append(thelist[0])
         del thelist[0]
         for i in range((int)(Nindiv*0.8)):
-            first = np.random.randint(0,len(thelist))
-            second = np.random.randint(0,len(thelist))
+            first = random.randint(0,len(thelist)-1)
+            second = random.randint(0,len(thelist)-1)
             if thelist[first]>thelist[second]:
                 newlist.append(thelist[first])
                 del thelist[first]
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         thelist.append(newlist[0])
         for i in range(1,len(newlist)):
             newlist[i].mutate(1)
-            iother = np.random.randint(0,len(newlist))
+            iother = random.randint(0,len(newlist)-1)
             newlist[i].crossover(newlist[iother])
             thelist.append(newlist[i])
         newlist=[]

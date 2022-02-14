@@ -1,15 +1,15 @@
-import numpy as np
+# import numpy as np
 import random
 
 class individu:
     def __init__(self) -> None:
         self.sum360=set()
         while len(self.sum360)!=5:
-            card = (np.random.randint(0,10), np.random.randint(1,5))
+            card = (random.randint(0,9), random.randint(1,4))
             self.sum360.add(card)
         self.sum36=set()
         while len(self.sum36)!=5:
-            card = (np.random.randint(0,10), np.random.randint(1,5))
+            card = (random.randint(0,9), random.randint(1,4))
             if card not in self.sum360:
                 self.sum36.add(card)
         self.score = -1    
@@ -20,16 +20,16 @@ class individu:
         self.sum360.discard(random.choice(tuple( self.sum360)))
         self.sum36.discard(random.choice(tuple( self.sum36)))
         while len(self.sum360)!=5:
-            card = (np.random.randint(0,10), np.random.randint(1,5))
+            card = (random.randint(0,9), random.randint(1,4))
             if card not in self.sum36:
                 self.sum360.add(card)
         while len(self.sum36)!=5:
-            card = (np.random.randint(0,10), np.random.randint(1,5))
+            card = (random.randint(0,9), random.randint(1,4))
             if card not in self.sum360:
                 self.sum36.add(card)
 
     def crossover(self, other) -> bool:
-        if np.random.randint(0,2)==1:
+        if random.randint(0,1)==1:
             if other.sum36.isdisjoint(self.sum360):
                 self.sum36 = other.sum36.copy()
                 return True

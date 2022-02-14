@@ -5,8 +5,8 @@ from multiprocessing import Pool
 def play(poolN):
 
     keep = 0.2
-    popSize = 300
-    nepoch = 6000
+    popSize = 30
+    nepoch = 200
 
     boards: list = []
     for _ in range(popSize):

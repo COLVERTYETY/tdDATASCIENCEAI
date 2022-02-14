@@ -1,6 +1,7 @@
 from __future__ import annotations
-import numpy as np
-
+# import numpy as np
+import random
+import math
 class caserne:
     gridWidth=12
     thegrid = None
@@ -10,22 +11,22 @@ class caserne:
         self.score = -1.0
 
     def crossover(self, other: caserne) -> None:
-        if np.random.randint(0,2)==1:
+        if random.randint(0,1)==1:
             self.x = other.x
         else:
             self.y = other.y
 
     def mutate(self,amplitude) ->None:
-        rnd = np.random.randint(0,7)
-        self.x+=amplitude*np.cos(rnd)
-        self.y+=amplitude*np.sin(rnd)
+        rnd = random.randint(0,6)
+        self.x+=amplitude*math.cos(rnd)
+        self.y+=amplitude*math.sin(rnd)
         self.clampcoords()
 
     def evaluate(self) -> float:
         loss = 0.0
         for i in range(len(caserne.thegrid)):
             for j in range(len(caserne.thegrid[0])):
-                loss+= caserne.thegrid[i][j]*np.sqrt(((self.x-i)**2) + ((self.y-j)**2))
+                loss+= caserne.thegrid[i][j]*math.sqrt(((self.x-i)**2) + ((self.y-j)**2))
         self.score = loss
         return loss
 
@@ -53,4 +54,4 @@ class caserne:
 
     @classmethod
     def Random(cls) -> caserne:
-        return cls(np.random.randint(0,caserne.gridWidth), np.random.randint(0,caserne.gridWidth))
+        return cls(random.randint(0,caserne.gridWidth-1), random.randint(0,caserne.gridWidth-1))

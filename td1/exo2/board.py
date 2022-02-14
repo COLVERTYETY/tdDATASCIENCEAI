@@ -4,7 +4,7 @@ import random
 
 class Board:
 
-    ncrossover = 2
+    ncrossover = 4
 
     def __init__(self) -> None:
         self.queens = set()
@@ -31,21 +31,30 @@ class Board:
         self.score = loss
 
     def crossover(self, other) -> None:
-        for _ in range(Board.ncrossover):
-            self.queens.discard(random.choice(self.queens))
-            while len(self.queens) != 8:
-                queen = random.choice(other.queens)
-                self.queens.add(queen)
+        # for _ in range(Board.ncrossover):
+        #     original = random.choice(tuple(self.queens))
+        #     self.queens.discard(original)
+        #     n = 0
+        #     while len(self.queens) != 8 and n!=10:
+        #         queen = random.choice(tuple(other.queens))
+        #         self.queens.add(queen)
+        #         n+=1
+        #     if len(self.queens) != 8:
+        #         self.queens.add(original)
+        total = set().union(self.queens, other.queens)
+        # print(total)
+        self.queens = set(random.sample(total,8))
+            
 
     def mutate(self, n):
         for _ in range(n):
-            queen = random.choice(self.queens)
+            queen = random.choice(tuple(self.queens))
             self.queens.discard(queen)
-            dx = random.randint(-1, 1)
-            dy = random.randint(-1, 1)
-            queen[0] += dx
-            queen[1] += dy
-            self.queens.add(queen)
+            while len(self.queens) != 8:
+                dx = random.randint(-1, 1)
+                dy = random.randint(-1, 1)
+                coords = ((queen[0] + dx+8)%8, (queen[1] + dy+8)%8)
+                self.queens.add(coords)
 
     def __lt__(self, other: Board) -> bool:
         if self.score == None:
@@ -54,12 +63,18 @@ class Board:
             other.evaluates()
         return self.score < other.score
 
+    def copy(self) -> Board:
+        board = Board()
+        board.queens = self.queens.copy()
+        board.score = self.score
+        return board
+
         
             
         
     def __str__(self) -> str:
         txt = ''
         for queen in self.queens:
-            txt += f'({queen[0]};{queen[1]}), '
+            txt += f'({queen[0]};{queen[1]}),'
         txt += f'score = {self.score}'
         return txt
