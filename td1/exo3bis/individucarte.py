@@ -6,8 +6,12 @@ class individu:
         self.cards = []
         total = [0,1,2,3,4,5,6,7,8,9]
         while len(total)!=0:
-            self.cards.append(total.pop(random.randint(0,len(total)-1)))
-        self.score = -1       
+            el = random.choice(total)
+            total.remove(el)
+            self.cards.append(el)
+        self.score = -1   
+        self.s360 = 0    
+        self.s36 = 0    
     
     def mutate(self):
         a = random.randint(0,9)
@@ -21,12 +25,14 @@ class individu:
         pass
 
     def evaluate(self):
-        sum360=0.0
+        sum360=1.0
         for i in self.cards[0:5]:
-            sum360+=i
+            sum360*=i
         sum36=0.0
+        self.s360 = sum360
         for j in self.cards[5:10]:
             sum36+=j
+        self.s36 = sum36
         weight36 = 10.0
         weight360 = 1.0
         score360 = (((sum360/360.0)  -1.0)**2)*weight360
@@ -42,5 +48,5 @@ class individu:
         return self.score<other.score
 
     def __str__(self):
-        return str(self.cards) + " " + str(self.score)
+        return str(self.cards) + " "+str(self.s360)+" " +str(self.s36) +" "+ str(self.score)
 

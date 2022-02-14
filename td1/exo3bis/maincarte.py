@@ -21,7 +21,7 @@ if __name__ == '__main__':
         thelist = newlist
         while len(thelist)<Nindiv:
             thelist.append(individu())
-        for i in range(2,len(thelist)):
-            other = random.choice(thelist[0:len(thelist)//4])
-            thelist[i].crossover(other)  
+        # for i in range(2,len(thelist)):
+        #     other = random.choice(thelist[0:len(thelist)//4])
+        #     thelist[i].crossover(other)  
 
