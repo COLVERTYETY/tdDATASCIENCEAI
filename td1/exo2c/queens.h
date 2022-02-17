@@ -15,7 +15,10 @@ class Queen{
         void mutate();
         void crossover(Queen& Q);
         void evaluate();
+        int getscore();
+        friend bool operator<(const Queen& a,const Queen& b);
         friend std::ostream& operator<<( std::ostream&  out, const Queen& Q);
+        static bool comp(const Queen* a, const Queen* b);
 };
 
 
