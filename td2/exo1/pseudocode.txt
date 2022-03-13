@@ -1,0 +1,15 @@
+Pseudo-code de l'algorithme apriori :
+
+créer la liste vide itemsets_frequent
+pour chaque élément dans la liste des transactions :
+    pour chaque itemset dans la liste itemsets_frequent :
+        si l'élément est présent dans l'itemset :
+            incrémenter le compteur de l'itemset
+            arrêter la boucle
+    si la boucle ne s'est pas arrêté (l'élément n'est pas présent dans l'itemset) :
+        créer un nouvel itemset avec l'élément
+        ajouter l'itemset à la liste itemsets_frequent
+        initialiser le compteur à 1
+trier la liste itemsets_frequent par ordre décroissant de compteur
+retirer les itemsets dont le compteur est inférieur à min_occurences
+retourner la liste itemsets_frequent
