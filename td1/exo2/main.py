@@ -1,3 +1,8 @@
+"""
+Cette implémentation à été développé lors du cours de Datascience,
+vous trouverez les fonctions de mutations, selection, croisement dans board.py
+"""
+
 from board import Board
 import random
 from multiprocessing import Pool
