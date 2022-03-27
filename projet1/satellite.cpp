@@ -37,12 +37,12 @@ Satellite::Satellite(Satellite sa, Satellite sb){
 }
 
 void Satellite::mutate(){
-    p0 += gaussianRand(0, 1);
-    p1 += gaussianRand(0, 1);
-    p2 += gaussianRand(0, 1);
-    p3 += gaussianRand(0, 1);
-    p4 += gaussianRand(0, 1);
-    p5 += gaussianRand(0, 1);
+    p0 += gaussianRand(0, 0.1);
+    p1 += gaussianRand(0, 0.1);
+    p2 += gaussianRand(0, 0.1);
+    p3 += gaussianRand(0, 0.1);
+    p4 += gaussianRand(0, 0.1);
+    p5 += gaussianRand(0, 0.1);
 }
 
 void Satellite::reset_loss(){
@@ -68,7 +68,7 @@ bool Satellite::compare_loss(const Satellite* s1, const Satellite* s2){
 }
 
 ostream& operator<<(ostream& os, const Satellite& s){
-    os << "p0: " << setw(14) << s.p0 << " p1: " << setw(14) << s.p1 << " p2: " << setw(14) << s.p2 << " p3: " << setw(14) << s.p3 << " p4: " << setw(14) << s.p4 << " p5: " << setw(14) << s.p5 << " loss: " << setw(14) << s.loss << endl;
+    os << "p0: " << setw(10) << s.p0 << " p1: " << setw(10) << s.p1 << " p2: " << setw(10) << s.p2 << " p3: " << setw(10) << s.p3 << " p4: " << setw(10) << s.p4 << " p5: " << setw(10) << s.p5 << " loss: " << setw(6) << s.loss << endl;
     return os;
 }
 

@@ -9,12 +9,12 @@ ry=data[2]
 
 
 
-p0 = 0.00264477
-p1 = 87.8377
-p2 = -30.7315
-p3 = 0.0120231
-p4 = 48.53
-p5 = -72.277
+p0 = 13.1888
+p1 = 21.1013
+p2 = 27.1315
+p3 = -22.8966
+p4 = -41.0979
+p5 = 84.9714
 
 x = []
 y = []
@@ -27,4 +27,4 @@ for t in rt:
 
 plt.scatter(x,y, color="red")
 plt.scatter(rx,ry, color="blue")
-plt.show()
+plt.savefig("plot.png")

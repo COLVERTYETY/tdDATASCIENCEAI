@@ -11,42 +11,33 @@
 #include "satellite.h"
 #include <iomanip>
 #include <random>
-#include <bits/stdc++.h>
 
-#define POPULATION_SIZE 10000
-#define EPOCHS 1000
-#define N_KEEPS 0.2
-#define N_KEEPS_2 0.6
+#define POPULATION_SIZE 1000000
+#define EPOCHS 100
+#define N_KEEPS 0.15
+#define N_KEEPS_2 0.4
 
 using namespace std;
 
+string dtos(double d);
+double frand(double fMin, double fMax);
 vector<vector<string>> parse_csv(string filename);
 void print_csv(vector<vector<string>> csv_data);
 vector<vector<double>> parse_csv_to_double(string filename);
 void print_csv(vector<vector<double>> csv_data);
 
 int main(){
+    srand (time(NULL));
     // parse csv from file "position_sample.csv" to vector of vector of string
     vector<vector<string>> csv_data = parse_csv("position_sample.csv");
     // parse to double
     vector<vector<double>> csv_data_double = parse_csv_to_double("position_sample.csv");
     
-    set<Satellite*> set_pop;
-
-    random_device rd;
-    mt19937 gen(rd());
-
-    exponential_distribution<double> dist(3);
-
-    while(set_pop.size() < POPULATION_SIZE){
-        Satellite* s = new Satellite();
-        set_pop.insert(s);
-    }
-
-    // transform set to vector
     vector<Satellite*> population;
-    for(auto it = set_pop.begin(); it != set_pop.end(); it++){
-        population.push_back(*it);
+
+    for(int i = 0; i < POPULATION_SIZE; i++){
+        Satellite* s = new Satellite();
+        population.push_back(s);
     }
 
     for(int i = 0; i < EPOCHS; i++){
@@ -61,56 +52,62 @@ int main(){
         sort(population.begin(), population.end(), Satellite::compare_loss);
 
         // print the best satellite with standardized width
-        cout << "Epoch " << setw(6) << i << ": " << *population[0] << endl;
+        cout << "Epoch " << setw(6) << i << ": " << setw(8) << dtos(population[0]->get_loss()) << " > " << setw(8) << dtos(population[1]->get_loss()) << " > " << setw(8) << dtos(population[2]->get_loss()) << endl;
 
-        // choose randomly N_KEEPS*POPULATION_SIZE in population with probability (1/item.get_loss())/total
+        int keep_size = (int)(N_KEEPS * POPULATION_SIZE);
 
-        vector<Satellite*> new_population; 
+        vector<Satellite*> new_population;
+        // keep the best satellite
+        new_population.push_back(population[0]);
 
-        double total = 0;
-        for(int j = 0; j < POPULATION_SIZE; j++){
-            total += 1/population[j]->get_loss();
-        }
+        // keep keep_size satellites by turnament selection
         
-        for(int j = 0; j < POPULATION_SIZE; j++){
-            double prob = 1/population[j]->get_loss()/total;
-            if(dist(gen) < prob){
-                new_population.push_back(population[j]);
+        for(int j = 0; j < keep_size; j++){
+            int index_1 = rand() % keep_size;
+            int index_2 = rand() % keep_size;
+            if(population[index_1]->get_loss() > population[index_2]->get_loss()){
+                new_population.push_back(population[index_1]);
+            }else{
+                new_population.push_back(population[index_2]);
             }
         }
 
-
-
-        
-
-        int keep_size = (int)(N_KEEPS * POPULATION_SIZE);
-        
-        
-        vector<Satellite*> new_population;
-        for(int j = 0; j < keep_size; j++){
-            new_population.push_back(population[(int)dist(gen)]);
+        int n_children = (int)(N_KEEPS_2 * (POPULATION_SIZE - keep_size));
+        vector<Satellite*> children;
+        // create n_children children by crossover on the new population
+        for(int j = 0; j < n_children; j++){
+            int index_1 = rand() % keep_size;
+            int index_2 = rand() % keep_size;
+            Satellite* child = new Satellite(*new_population[index_1], *new_population[index_2]);
+            children.push_back(child);
         }
 
-        for(int j = 1; j < keep_size; j++){
-            population[j] = new_population[j];
-        }
-        int keep_size_2 = (int)(N_KEEPS_2 * POPULATION_SIZE);
-        // fill rest of population with new satellites
-        for(int j = keep_size; j < keep_size+keep_size_2; j++){
-            Satellite* s = new Satellite(*population[(int)dist(gen)], *population[(int)dist(gen)]);
-            population[j] = s;
+        // mutate the new population
+        for(int j = 1; j < new_population.size(); j++){
+            new_population[j]->mutate();
         }
 
-        // remove all duplicates
-        sort(population.begin(), population.end());
-        population.erase(unique(population.begin(), population.end()), population.end());
+        // merge the new population and children
+        for(int j = 0; j < children.size(); j++){
+            new_population.push_back(children[j]);
+        }
 
-        // fill with new satellites
-        while(population.size() < POPULATION_SIZE){
+        // fill new population with random satellites
+        for(int j = 0; j < POPULATION_SIZE - new_population.size(); j++){
             Satellite* s = new Satellite();
-            population.push_back(s);
+            new_population.push_back(s);
         }
+
+        // replace the population with the new population
+        population = new_population;
+
+        
     }
+
+    // print the best satellite
+    cout << "Best satellite: " << endl;
+    cout << "Loss: " << population[0]->get_loss() << endl;
+    cout << "Data: " << *population[0] << endl;
 
     return 0;
 }
@@ -152,4 +149,17 @@ void print_csv(vector<vector<string>> csv_data){
         }
         cout << endl;
     }
+}
+
+double frand(double fMin, double fMax)
+{
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
+}
+
+// double to 2 decimal string
+string dtos(double d){
+    stringstream ss;
+    ss << fixed << setprecision(2) << d;
+    return ss.str();
 }
