@@ -8,6 +8,7 @@ double fRand(double fMin, double fMax)
     return fMin + f * (fMax - fMin);
 }
 
+// 
 double gaussianRand(double mean, double std)
 {
     double u1 = fRand(0.0, 1.0);

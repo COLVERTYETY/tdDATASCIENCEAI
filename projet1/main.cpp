@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <random>
 
-#define POPULATION_SIZE 200000
+#define POPULATION_SIZE 50000
 #define EPOCHS 200
 #define N_KEEPS 0.3
 #define N_KEEPS_2 0.8
@@ -28,14 +28,15 @@ void print_csv(vector<vector<double>> csv_data);
 
 int main(){
     srand (time(NULL));
-    // parse csv from file "position_sample.csv" to vector of vector of string
-    vector<vector<string>> csv_data = parse_csv("position_sample.csv");
     // parse to double
     vector<vector<double>> csv_data_double = parse_csv_to_double("position_sample.csv");
 
     
     vector<Satellite*> population;
 
+
+    // start timer
+    clock_t begin = clock();
 
 
     #pragma omp parallel for
@@ -56,8 +57,10 @@ int main(){
         // sort population by loss
         sort(population.begin(), population.end(), Satellite::compare_loss);
 
+        if(i%10){
         // print the best satellite with standardized width
-        cout << "Epoch " << setw(6) << i << ": " << *population[0] << endl;
+            cout << "Epoch " << setw(6) << i << ": " << *population[0] << endl;
+        }
 
         double total = 0;
         for(int j = 0; j < POPULATION_SIZE; j++){
@@ -116,13 +119,12 @@ int main(){
             Satellite* s = new Satellite();
             population.push_back(s);
         }
-
-
-
-
-
-        
     }
+
+    // stop timer
+    clock_t end = clock();
+    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+    cout << "Time elapsed: " << elapsed_secs << "s" << endl;
 
     return 0;
 }

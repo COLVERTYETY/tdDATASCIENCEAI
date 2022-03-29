@@ -1,0 +1,63 @@
+% !TEX TS-program = lualatex
+% !TEX encoding = UTF-8
+%--------------------
+% Packages
+% -------------------
+\documentclass[11pt]{report}
+\usepackage{fontspec}
+\setmainfont[
+ Path = ./fonts/,
+ Extension = .ttf,
+ Ligatures = TeX,
+ BoldFont = calibri-bold,
+ ItalicFont = calibri-italic,
+]{calibri-regular}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, lmargin=1.27cm, rmargin=1.27cm, tmargin=0.75cm, bmargin=0.75cm}
+\usepackage[french]{babel}
+\usepackage{multirow}
+\usepackage{calc}
+\usepackage[colorlinks=true,linkcolor=black,anchorcolor=black,citecolor=black,filecolor=black,menucolor=black,runcolor=black,urlcolor=black]{hyperref}
+%-----------------------
+% Functions
+%-----------------------
+\newcommand{\var}[2]{\newcommand{#1}{#2}}
+\newcommand{\fSize}[1]{\fontsize{#1pt}{#1pt*1.2}\selectfont}
+\newcommand{\cvSection}[1]{\hspace{-0.75cm}\fSize{16} \textbf{#1}}
+
+
+\begin{document}
+\begin{titlepage}
+    \vspace*{\fill}
+
+    \centering
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries Projet IA: Star Wars}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	\LARGE Antoine Raulin
+	
+	\vspace*{\fill}
+\footnotesize \today
+\end{titlepage}
+\newpage
+\chapter*{Rapport}
+\begin{enumerate}
+    \item \underline{Quelle est la taille de l’espace de recherche (utiliser une notation scientifique) ?} \\ \\ Sachant que les paramètres de l'orbite dîte de Lissajous sont les $p_i, i \in [1;6]$ et que chaque $p_i$ est un nombre réel compris entre $[-100;100]$, l'espace de recherche est donc de $200^6=6,4\times10^{13}$. \\
+    \item \underline{Quelle est votre fonction fitness ?} \\ \\ Afin de choisir une bonne fonction \textit{fitness}, je me suis posé ces deux conditions : \begin{itemize}
+		\item La fonction \textit{fitness} doit être suffisamment rapide à être calculée.
+		\item Elle doit représenter à quel point la solution répond au problème et pénaliser fortement les solutions qui s'en éloignent.
+	\end{itemize}
+	J'ai donc choisit de faire une fonction \textit{fitness} de type \textit{loss} où l'objectif est donc de s'approcher le plus possible de $0$. \\
+	Pour chaque temps $t$ de l'échantillon de position fournit, je vais évaluer la distance euclidienne entre les coordonnées calculée avec les formules $x(t)=p_1\times \sin(p_2\times t+p_3)$ et $y(t)=p_4\times \sin (p_5 \times t + p_6)$ et ceux fournit dans le fichier de données. \\ Pour augmenter la vitesse de calcul je ne calcul pas la racine carrée de la somme des carrés de ces distances. \\
+	Le score de \textit{fitness} de la solution est donc la somme des distance euclidiennes (au carrée) entre les coordonnées calculées et celles fournit dans le fichier de données. \\
+	Ainsi on a :
+	$$	\mbox{fitness} = \sum_{t=0}^{N-1} (x_t-x(t))^2 + (y_t-y(t))^2 $$ \\
+	\item \underline{Décrivez les opérateurs mis en œuvre (mutation, croissement) ?} \\ 
+	\begin{itemize}
+		\item Mutation : \\
+		Chaque paramètres $p_i$ est modifié par un nombre aléatoire obtenu à partir d'une distribution normale d'espèrance $\mu=0$ et d'écart-type $\sigma = 0,1$.\\ L'utilisation d'une mutation gaussienne me permet d'effectuer des mutations sur chaque paramètres très finement. En effet la mutation gaussienne est très utile lorsqu'on travaille avec des valeurs réelles et permet d'introduire de la diversité dans la population grâce à de petits changements progressifs.
+	\end{itemize}
+\end{enumerate}
+
+\end{document}
