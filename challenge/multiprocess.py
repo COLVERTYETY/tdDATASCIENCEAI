@@ -6,6 +6,7 @@ import os, psutil
 from multiprocessing import Pool
 import myfilter
 import gc
+import splitlain as sl
 
 def main(pid):
     plt.ion()
@@ -172,5 +173,5 @@ def main(pid):
 if __name__ == "__main__":
     while True:
         with Pool(processes=6) as pool:
-            results = pool.map(main, range(6))
+            results = pool.map(sl.main, range(6))
             myfilter.main()
