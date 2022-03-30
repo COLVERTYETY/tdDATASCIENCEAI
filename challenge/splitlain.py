@@ -163,16 +163,16 @@ def main(pid=-1):
         if epoch%displayrate==0:
             process = psutil.Process(os.getpid())
             print(" time:=", stop-start, "memory:=", process.memory_info().rss/1000000, "Gb")
-            plt.subplot(1,2,1)
-            plt.cla()
-            plt.plot(np.log(lossx))
-            plt.subplot(1,2,2)
-            plt.cla()
-            plt.plot(np.log(lossy))
-            # plt.show()
-            plt.draw()
-            plt.pause(0.001)
-            gc.collect()
+            # plt.subplot(1,2,1)
+            # plt.cla()
+            # plt.plot(np.log(lossx))
+            # plt.subplot(1,2,2)
+            # plt.cla()
+            # plt.plot(np.log(lossy))
+            # # plt.show()
+            # plt.draw()
+            # plt.pause(0.001)
+            # gc.collect()
 
 
     #last sort for disp
