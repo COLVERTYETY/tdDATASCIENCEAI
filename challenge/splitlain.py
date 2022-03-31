@@ -17,10 +17,10 @@ def main(pid=-1):
     # plt.scatter(rx,ry, color="red")
 
     Nindiv = 5000
-    Nepochs = 1001
+    Nepochs = 3001
     ratio1 = 0.6
-    ratio2 = 0.93
-    displayrate=100
+    ratio2 = 0.96
+    displayrate=200
     nuke=10000
     ratio3 = 0.2
     ratio4 = 0.2
@@ -29,12 +29,12 @@ def main(pid=-1):
 
 
     # create random population
-    p1 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
-    p2 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
-    p3 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
-    p4 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
-    p5 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
-    p6 = np.broadcast_to((rng.random(Nindiv)*200 -100)[...,None],(Nindiv,len(rt)) )
+    p1 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
+    p2 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
+    p3 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
+    p4 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
+    p5 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
+    p6 = np.repeat((rng.random(Nindiv)*200 -100)[...,None], len(rt), axis=1)
     lossx = np.ones(Nindiv)*np.inf
     lossy = np.ones(Nindiv)*np.inf
 
@@ -58,32 +58,27 @@ def main(pid=-1):
     minlossy = []
     meanlossy = []
     lossesy=[]
-
+    total_runtime=0
     for epoch in range(Nepochs):  
         start = time.time()  
         xs = p1*np.sin((p2*RT)+p3)
         ys = p4*np.sin((p5*RT)+p6)
         errorx= abs(xs-RX)#np.power(xs-RX,4)#(RX-xs)**2#(((RX-xs)**2)/RX**2)#np.power(xs-RX,2)  # square penalises more the outliers then small errors
-        # a = ((xs-RX)**2)
-        # (xs-RX)**2
-        # print(sum(sum(a-errorx)))
-        #(ys-RY)**2
         errory= abs(ys-RY)#np.power(ys-RY,2)#(RY-ys)**2#(((RY-ys)**2)/RY**2)#np.power(ys-RY,2)  # ask yliess
-        # loss = (np.mean(errorx, axis=1) + np.mean(errory, axis=1))**4
         lossx = np.mean(errorx, axis=1)**4
         lossy = np.mean(errory, axis=1)**4
 
         # sort by loss 
-        indx = np.argsort(lossx)
-        np.take(lossx, indx, out=lossx)
-        p1 = np.take(p1, indx,axis=0,)#mode="clip")
-        p2 = np.take(p2, indx,axis=0,)#mode="clip")
-        p3 = np.take(p3, indx,axis=0,)#mode="clip")
-        indy = np.argsort(lossy)
-        np.take(lossy, indy, out=lossy)
-        p4 = np.take(p4, indy,axis=0,)#mode="clip")
-        p5 = np.take(p5, indy,axis=0,)#mode="clip")
-        p6 = np.take(p6, indy,axis=0,)#mode="clip")
+        # indx = np.argsort(lossx)
+        # np.take(lossx, indx, out=lossx)
+        # p1 = np.take(p1, indx,axis=0,)#mode="clip")
+        # p2 = np.take(p2, indx,axis=0,)#mode="clip")
+        # p3 = np.take(p3, indx,axis=0,)#mode="clip")
+        # indy = np.argsort(lossy)
+        # np.take(lossy, indy, out=lossy)
+        # p4 = np.take(p4, indy,axis=0,)#mode="clip")
+        # p5 = np.take(p5, indy,axis=0,)#mode="clip")
+        # p6 = np.take(p6, indy,axis=0,)#mode="clip")
         # debug
         maxlossx.append(lossx.max())
         maxlossy.append(lossy.max())
@@ -134,45 +129,48 @@ def main(pid=-1):
         #associate each child with a parent
         s=np.sum(1/(selectidx+1))
         parent = rng.choice(selectidx, size=len(childrenx), replace=True,p=1/(selectidx+1)/s)
-        p1[childrenx] = p1[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childrenx))[...,None], (len(childreny),len(rt)) )
-        p2[childrenx] = p2[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childrenx))[...,None], (len(childreny),len(rt)) )
-        p3[childrenx] = p3[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childrenx))[...,None], (len(childreny),len(rt)) )
+        p1[childrenx] = p1[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childrenx))[...,None],len(rt), axis=1)
+        p2[childrenx] = p2[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childrenx))[...,None],len(rt), axis=1)
+        p3[childrenx] = p3[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childrenx))[...,None],len(rt), axis=1)
         parent = rng.choice(selectidx, size=len(childreny), replace=True,p=1/(selectidx+1)/s)
-        p4[childreny] = p4[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childreny))[...,None], (len(childreny),len(rt)) )
-        p5[childreny] = p5[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childreny))[...,None], (len(childreny),len(rt)) )
-        p6[childreny] = p6[parent] + np.broadcast_to(rng.normal(0.0,0.01,size=len(childreny))[...,None], (len(childreny),len(rt)) )
+        p4[childreny] = p4[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childreny))[...,None],len(rt), axis=1)
+        p5[childreny] = p5[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childreny))[...,None],len(rt), axis=1)
+        p6[childreny] = p6[parent] + np.repeat(rng.normal(0.0,0.01,size=len(childreny))[...,None],len(rt), axis=1)
 
         # ceate new individuals
-        p1[newindividualsx] = np.broadcast_to((rng.random(len(newindividualsx))*200 -100)[...,None], (len(newindividualsx),len(rt)) )
-        p2[newindividualsx] = np.broadcast_to((rng.random(len(newindividualsx))*200 -100)[...,None], (len(newindividualsx),len(rt)) )
-        p3[newindividualsx] = np.broadcast_to((rng.random(len(newindividualsx))*200 -100)[...,None], (len(newindividualsx),len(rt)) )
-        p4[newindividualsy] = np.broadcast_to((rng.random(len(newindividualsy))*200 -100)[...,None], (len(newindividualsy),len(rt)) )
-        p5[newindividualsy] = np.broadcast_to((rng.random(len(newindividualsy))*200 -100)[...,None], (len(newindividualsy),len(rt)) )
-        p6[newindividualsy] = np.broadcast_to((rng.random(len(newindividualsy))*200 -100)[...,None], (len(newindividualsy),len(rt)) )
+        p1[newindividualsx] = np.repeat((rng.random(len(newindividualsx))*200 -100)[...,None], len(rt), axis=1)
+        p2[newindividualsx] = np.repeat((rng.random(len(newindividualsx))*200 -100)[...,None], len(rt), axis=1)
+        p3[newindividualsx] = np.repeat((rng.random(len(newindividualsx))*200 -100)[...,None], len(rt), axis=1)
+        p4[newindividualsy] = np.repeat((rng.random(len(newindividualsy))*200 -100)[...,None], len(rt), axis=1)
+        p5[newindividualsy] = np.repeat((rng.random(len(newindividualsy))*200 -100)[...,None], len(rt), axis=1)
+        p6[newindividualsy] = np.repeat((rng.random(len(newindividualsy))*200 -100)[...,None], len(rt), axis=1)
 
         # mutate
-        p1[selectidx]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None], (len(selectidx),len(rt)) )
-        p2[selectidx]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None], (len(selectidx),len(rt)) )
-        p3[selectidx]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None], (len(selectidx),len(rt)) )
-        p4[selectidy]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None], (len(selectidy),len(rt)) )
-        p5[selectidy]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None], (len(selectidy),len(rt)) )
-        p6[selectidy]+=np.broadcast_to(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None], (len(selectidy),len(rt)) )
+        p1[selectidx]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None],len(rt),axis=1)
+        p2[selectidx]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None],len(rt),axis=1)
+        p3[selectidx]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidx))[...,None],len(rt),axis=1)
+        p4[selectidy]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None],len(rt),axis=1)
+        p5[selectidy]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None],len(rt),axis=1)
+        p6[selectidy]+=np.repeat(rng.normal(0.0,(Nepochs-epoch)/Nepochs/45,size=len(selectidy))[...,None],len(rt),axis=1)
 
         # (Nepochs-epoch)/Nepochs/50
         stop= time.time()
+        total_runtime+=stop-start
         if epoch%displayrate==0:
             process = psutil.Process(os.getpid())
             print(" time:=", stop-start, "memory:=", process.memory_info().rss/1000000, "Gb")
-            # plt.subplot(1,2,1)
-            # plt.cla()
-            # plt.plot(np.log(lossx))
-            # plt.subplot(1,2,2)
-            # plt.cla()
-            # plt.plot(np.log(lossy))
-            # # plt.show()
-            # plt.draw()
-            # plt.pause(0.001)
-            # gc.collect()
+            if pid==-1:
+                pass
+                # plt.subplot(1,2,1)
+                # plt.cla()
+                # # plt.plot(np.log(np.sort(lossx)))
+                # plt.subplot(1,2,2)
+                # plt.cla()
+                # # plt.plot(np.log(np.sort(lossy)))
+                # # plt.show()
+                # plt.draw()
+                # plt.pause(0.001)
+                # gc.collect()
 
 
     #last sort for disp
@@ -187,19 +185,34 @@ def main(pid=-1):
     p4 = np.take(p4, indy,axis=0)
     p5 = np.take(p5, indy,axis=0)
     p6 = np.take(p6, indy,axis=0)
-
+    print("lossx:=", lossx[0])
+    print("lossy:=", lossy[0])
     if pid==-1:
         losses=np.array(lossesx)
         plt.ioff()
         plt.imshow(np.log(np.log(losses+1)))
         plt.title("log of log of losses")
+        plt.ylabel("generation")
+        plt.xlabel("log of log of loss on X")
+        plt.legend()
         plt.show()
 
         plt.cla()
+        plt.subplot(1,2,1)
         plt.fill_between(range(1,Nepochs+1), np.log(minlossx), np.log(maxlossx), color="blue", alpha=0.1)
         plt.plot(np.log(meanlossx), color="blue")
+        plt.ylabel("log of loss")
+        plt.xlabel("generations")
         # plt.ylim((0,10))
-        plt.title("losses")
+        plt.title("losses on X")
+        plt.subplot(1,2,2)
+        plt.fill_between(range(1,Nepochs+1), np.log(minlossy), np.log(maxlossy), color="blue", alpha=0.1)
+        plt.plot(np.log(meanlossy), color="blue")
+        plt.title("losses on Y")
+        plt.ylabel("log of loss")
+        plt.xlabel("generations")
+        print("total runtime:=", total_runtime)
+        print("avg runtime:=", total_runtime/Nepochs)
         plt.show()
         plt.cla()
         for i, txt in enumerate(rt):
@@ -217,7 +230,7 @@ def main(pid=-1):
         plt.show()
 
     np.savetxt(f"./bestindivs/bestindivsplit{time.time()}.txt",np.array([p1[0][0],p2[0][0],p3[0][0],p4[0][0],p5[0][0],p6[0][0]]))
-
+    np.savetxt(f"./runtimes/mytime{time.time()}.txt", np.array([total_runtime, total_runtime/Nepochs, len(rt), lossx[0], lossy[0]]))
 
 if __name__ == '__main__':
     main()
