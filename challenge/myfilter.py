@@ -27,7 +27,7 @@ def main():
             # print(p[0],p[1],p[2])
             x = indiv[0]*np.sin((indiv[1]*rt[i])+indiv[2])
             y = indiv[3]*np.sin((indiv[4]*rt[i])+indiv[5])
-            loss += np.sqrt(np.power(x-rx[i],2)+np.power(y-ry[i],2))
+            loss += np.power(x-rx[i],2)+np.power(y-ry[i],2)
             bestindivs.append((indiv, loss, filename))
             plt.scatter(x,y, color="blue")
             plt.scatter(rx[i],ry[i], color="red")
