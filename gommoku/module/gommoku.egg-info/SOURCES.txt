@@ -1,0 +1,6 @@
+functions.c
+setup.py
+gommoku.egg-info/PKG-INFO
+gommoku.egg-info/SOURCES.txt
+gommoku.egg-info/dependency_links.txt
+gommoku.egg-info/top_level.txt
