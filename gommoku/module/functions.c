@@ -8,6 +8,43 @@ int board[12][12];
 
 static PyObject* myError;
 
+int get_victor(){
+    /// detect if 4 or more of the same color are in a row
+    // detect horizontal
+    for (int i = 0; i < 12; i++) {
+        for (int j = 0; j < 9; j++) {
+            if (board[i][j] != -1 && board[i][j] == board[i][j+1] && board[i][j] == board[i][j+2] && board[i][j] == board[i][j+3]) {
+                return  board[i][j];
+            }
+        }
+    }
+    // detect vertical
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 12; j++) {
+            if (board[i][j] != -1 && board[i][j] == board[i+1][j] && board[i][j] == board[i+2][j] && board[i][j] == board[i+3][j]) {
+                return board[i][j];
+            }
+        }
+    }
+    // detect diagonal
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            if (board[i][j] != -1 && board[i][j] == board[i+1][j+1] && board[i][j] == board[i+2][j+2] && board[i][j] == board[i+3][j+3]) {
+                return board[i][j];
+            }
+        }
+    }
+    // detect other diagonal
+    for (int i = 0; i < 9; i++) {
+        for (int j = 3; j < 12; j++) {
+            if (board[i][j]!=-1 && board[i][j] == board[i+1][j-1] && board[i][j] == board[i+2][j-2] && board[i][j] == board[i+3][j-3]) {
+                return board[i][j];
+            }
+        }
+    }
+    return -1;
+}
+
 static PyObject* hello_world(PyObject* self, PyObject* args) {
     return Py_BuildValue("s", "Hello World!");
 }
@@ -22,40 +59,7 @@ static PyObject* game_over(PyObject* self, PyObject* args) {
             board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*12+j));
         }
     }
-    /// detect if 4 or more of the same color are in a row
-    // detect horizontal
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (board[i][j] != -1 && board[i][j] == board[i][j+1] && board[i][j] == board[i][j+2] && board[i][j] == board[i][j+3]) {
-                return Py_BuildValue("i", board[i][j]);
-            }
-        }
-    }
-    // detect vertical
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 12; j++) {
-            if (board[i][j] != -1 && board[i][j] == board[i+1][j] && board[i][j] == board[i+2][j] && board[i][j] == board[i+3][j]) {
-                return Py_BuildValue("i", board[i][j]);
-            }
-        }
-    }
-    // detect diagonal
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (board[i][j] != -1 && board[i][j] == board[i+1][j+1] && board[i][j] == board[i+2][j+2] && board[i][j] == board[i+3][j+3]) {
-                return Py_BuildValue("i", board[i][j]);
-            }
-        }
-    }
-    // detect other diagonal
-    for (int i = 0; i < 9; i++) {
-        for (int j = 3; j < 12; j++) {
-            if (board[i][j]!=-1 && board[i][j] == board[i+1][j-1] && board[i][j] == board[i+2][j-2] && board[i][j] == board[i+3][j-3]) {
-                return Py_BuildValue("i", board[i][j]);
-            }
-        }
-    }
-    return Py_BuildValue("i", -1);
+    return Py_BuildValue("i", get_victor());
 }
 
 
