@@ -1,6 +1,6 @@
 from multiprocessing.dummy import current_process
 import tkinter as tk
-# import gommoku as gm
+import gommoku as gm
 
 players = ["red","blue"]
 current_player = 0
@@ -35,7 +35,7 @@ class App(tk.Tk):
         for i in range(12):
             for j in range(12):
                 game_grid[(i,j)] = -1
-                cell = tk.Label(self.upper_frame_grid, bg="white", text=f"{i};{j}")
+                cell = tk.Label(self.upper_frame_grid, bg="white", text=str(i).rjust(2)+":"+str(j).rjust(2))
                 cell.grid(row=i, column=j)
                 cell.bind("<Enter>", lambda event, button=cell, pos=(i,j): self.on_enter(event, button, pos))
                 cell.bind("<Leave>", lambda event, button=cell, pos=(i,j) : self.on_leave(event, button, pos))
@@ -71,15 +71,18 @@ class App(tk.Tk):
             self.change_player()
 
     def solve(self):
-        print("solve")
+        print("not implemented yet")
 
     def reset(self):
-        global game_grid
+        global game_grid, history
+        history = []
         for i in range(12):
             for j in range(12):
                 game_grid[(i,j)] = -1
                 cell = self.upper_frame_grid.grid_slaves(row=i, column=j)[0]
                 cell["bg"] = "white"
+        self.upper_frame_grid.configure(bg="lightgrey")
+        
 
     def on_click(self, e, btn, pos):
         global players, current_player, game_grid, history
@@ -89,6 +92,7 @@ class App(tk.Tk):
             history.append(pos)
             ### now change the player
             self.change_player()
+        self.check_victory()
 
     def change_player(self):
         global players, current_player
@@ -108,6 +112,22 @@ class App(tk.Tk):
         else:
             btn["bg"] = players[game_grid[pos]]
 
+    def check_victory(self):
+        global game_grid
+        temp=[]
+        for i in range(12):
+            for j in range(12):
+                temp.append(game_grid[(i,j)])
+        t = gm.game_over(temp)
+        # print(t)
+        if t == 0:
+            # print("red wins")
+            # change the background of the self.upper_frame_grid
+            self.upper_frame_grid.configure(bg="pink")
+        elif t == 1:
+            # print("blue wins")
+            # change the background of the self.upper_frame_grid
+            self.upper_frame_grid.configure(bg="lightblue")
 
 
 
