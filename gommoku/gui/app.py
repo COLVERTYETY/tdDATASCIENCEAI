@@ -69,6 +69,8 @@ class App(tk.Tk):
             cell["bg"] = "white"
             game_grid[pos] = -1
             self.change_player()
+            self.upper_frame_grid.configure(bg="lightgrey")
+            self.check_victory()
 
     def solve(self):
         print("not implemented yet")
