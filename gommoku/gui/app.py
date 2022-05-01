@@ -1,8 +1,9 @@
-from multiprocessing.dummy import current_process
 import tkinter as tk
 import gommoku as gm
+import time 
 
 players = ["red","blue"]
+players2 = ["pink","lightblue"]
 current_player = 0
 game_grid = {}
 history = []
@@ -61,6 +62,16 @@ class App(tk.Tk):
         self.solve_btn = tk.Button(self.lower_frame_grid, text="computer", bg="white", command=self.solve)
         self.solve_btn.grid(row=0, column=3)
 
+    def update_colors(self):
+        global game_grid
+        for i in range(12):
+            for j in range(12):
+                cell = self.upper_frame_grid.grid_slaves(row=i, column=j)[0]
+                if game_grid[(i,j)] == -1:
+                    cell["bg"] = "white"
+                else:
+                    cell["bg"] = players[game_grid[(i,j)]]
+
     def step_back(self):
         global history
         if len(history) > 0:
@@ -87,8 +98,29 @@ class App(tk.Tk):
         if self.check_victory():
             return
         # we play
-        res = gm.solve(temp,current_player,pos[0],pos[1])
-        print(res)
+        start = time.time()
+        (moves,(score,x,y)) = gm.solve(temp,current_player,pos[0],pos[1])
+        stop = time.time()
+        print(f"time taken : {stop-start}s")
+        print("move score is",score)
+        # display the potential moves
+        self.update_colors()
+        for move in moves:
+            if move[0] != -1 and move[1] != -1:
+                cell = self.upper_frame_grid.grid_slaves(row=move[0], column=move[1])[0]
+                cell["bg"] = players2[current_player]
+        # we update the game grid
+        game_grid[(x,y)] = current_player
+        # we update the gui
+        cell = self.upper_frame_grid.grid_slaves(row=x, column=y)[0]
+        cell["bg"] = players[current_player]
+        # we update the history
+        history.append((x,y))
+        # we change the player
+        self.change_player()
+        # we check if the game is solved
+        self.check_victory()
+
 
     def reset(self):
         global game_grid, history
@@ -111,6 +143,7 @@ class App(tk.Tk):
             self.check_victory()
             ### now change the player
             self.change_player()
+        self.update_colors()
 
     def change_player(self):
         global players, current_player
@@ -144,15 +177,8 @@ class App(tk.Tk):
             for j in range(12):
                 temp.append(game_grid[(i,j)])
         t = gm.game_over(temp)
-        # print(t)
-        if t == 0:
-            # print("red wins")
-            # change the background of the self.upper_frame_grid
-            self.upper_frame_grid.configure(bg="pink")
-        elif t == 1:
-            # print("blue wins")
-            # change the background of the self.upper_frame_grid
-            self.upper_frame_grid.configure(bg="lightblue")
+        if t != -1:
+            self.upper_frame_grid.configure(bg=players2[t])
 
 
 
