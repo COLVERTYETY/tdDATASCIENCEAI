@@ -73,7 +73,22 @@ class App(tk.Tk):
             self.check_victory()
 
     def solve(self):
-        print("not implemented yet")
+        global game_grid, history
+        temp=[]
+        for i in range(12):
+            for j in range(12):
+                temp.append(game_grid[(i,j)])
+        # check if there is a move in teh history
+        if len(history) > 0:
+            pos = history[-1]
+        else:
+            pos = (5,5)
+        # check if the game is already solved
+        if self.check_victory():
+            return
+        # we play
+        res = gm.solve(temp,current_player,pos[0],pos[1])
+        print(res)
 
     def reset(self):
         global game_grid, history
@@ -92,16 +107,24 @@ class App(tk.Tk):
             game_grid[pos] = current_player
             btn["bg"] = players[current_player]
             history.append(pos)
+            ## check victory
+            self.check_victory()
             ### now change the player
             self.change_player()
-        self.check_victory()
 
     def change_player(self):
         global players, current_player
         current_player = (current_player + 1) % 2
         self.player_btn["text"] = f"{players[current_player]}"
         self.player_btn["bg"] = players[current_player]
-        
+        # get the evaluation of the board
+        temp=[]
+        for i in range(12):
+            for j in range(12):
+                temp.append(game_grid[(i,j)])
+        evaluation = gm.evaluate_board(temp,current_player)
+        print(f"evaluation for player {players[current_player]} is:",evaluation)
+
     def on_enter(self, e, btn, pos):
         global players, current_player, game_grid
         if game_grid[pos] == -1:
