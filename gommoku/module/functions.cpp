@@ -1,20 +1,21 @@
-#include "/usr/include/python3.10/Python.h"
+#include <Python.h>
 
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
 
-#define widthN 3
+#define widthN 4
 #define widthN1 10
 #define MAX_DEPTH 6
 #define winmweight 999
 #define BETA 1000000
 #define ALPHA -1000000
 
-/// 2d array of char to hold the game board, 12*12
-int board[12][12];
+/// 2d array of char to hold the game board, 15*15
+int board[15][15];
 int neighbors[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-int neighbour_count[12][12];
+int starpattern[][2] = {{2,0},{3,0},{4,0},{-2,0},{-3,0},{-4,0},{0,-2},{0,-3},{0,-4},{0,2},{0,3},{0,4},{2,2},{3,3},{4,4},{2,-2},{3,-3},{4,-4},{-2,-2},{-3,-3},{-4,-4},{-2,2},{-3,3},{-4,4}};
+int neighbour_count[15][15];
 
 static PyObject* myError;
 
@@ -23,8 +24,30 @@ void add_neighbors(int x, int y) {
     for (i = 0; i < 8; i++) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
-        if (j >= 0 && j < 12 && k >= 0 && k < 12) {
+        if (j >= 0 && j < 15 && k >= 0 && k < 15) {
+            neighbour_count[j][k] += 2;
+        }
+    }
+}
+
+void add_star_neighbors(int x, int y) {
+    int i, j;
+    for (i = 0; i < 24; i++) {
+        j = x + starpattern[i][0];
+        int k = y + starpattern[i][1];
+        if (j >= 0 && j < 15 && k >= 0 && k < 15) {
             neighbour_count[j][k] += 1;
+        }
+    }
+}
+
+void sub_star_neighbors(int x, int y) {
+    int i, j;
+    for (i = 0; i < 24; i++) {
+        j = x + starpattern[i][0];
+        int k = y + starpattern[i][1];
+        if (j >= 0 && j < 15 && k >= 0 && k < 15) {
+            neighbour_count[j][k] -= 1;
         }
     }
 }
@@ -34,7 +57,7 @@ void sub_neighbors(int x, int y) {
     for (i = 0; i < 8; i++) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
-        if (j >= 0 && j < 12 && k >= 0 && k < 12) {
+        if (j >= 0 && j < 15 && k >= 0 && k < 15) {
             neighbour_count[j][k] -= 1;
         }
     }
@@ -42,8 +65,8 @@ void sub_neighbors(int x, int y) {
 
 int get_stalemate() {
     int i, j;
-    for (i = 0; i < 12; i++) {
-        for (j = 0; j < 12; j++) {
+    for (i = 0; i < 15; i++) {
+        for (j = 0; j < 15; j++) {
             if (board[i][j] == -1) {
                 return 0;
             }
@@ -59,8 +82,8 @@ void get_most_neighbors(int list[][2], int start,int Q) {
         counts[i] = 0;
     }
     // for every cell of the neighbor_count array
-    for (i = 0; i < 12; i++) {
-        for (j = 0; j < 12; j++) {
+    for (i = 0; i < 15; i++) {
+        for (j = 0; j < 15; j++) {
             
             // if the cell is not empty and has a count higher than 0 and empty in the board
             if ((neighbour_count[i][j] > 0) && (board[i][j] == -1)) {
@@ -107,7 +130,7 @@ void get_neighbours(int list[][2], int start, int x, int y) {
         int j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
         // if the neighbour is not out of bounds and not filled in the board
-        if (j >= 0 && j < 12 && k >= 0 && k < 12 && board[j][k] == -1) {
+        if (j >= 0 && j < 15 && k >= 0 && k < 15 && board[j][k] == -1) {
             // add the neighbour to the list
             list[start+i][0] = j;
             list[start+i][1] = k;
@@ -159,61 +182,60 @@ int is_winning_move(int x, int y, int player) {
 
 int alignement_score(int player) {
     int score = 0;
-    
     /// detect all the alignements
     for(int m=1; m<=5; m++) {
         int breakcon=0;
         //detect horizontal
-        for (int i = 0; i < 12; i++) {
-            for (int j = 0; j < 12-m; j++) {
+        for (int i = 0; i < 15; i++) {
+            for (int j = 0; j < 15-m; j++) {
                 for(int k=0; k<=m; k++) {
                     if(board[i][j+k] != player) {
                         break;
                     }
                     if(k==m) {
-                        score+=std::pow(2,m);
+                        score+=std::pow(10,m);
                         breakcon=1;
                     }
                 }
             }
         }
         //detect vertical
-        for (int i = 0; i < 12-m; i++) {
-            for (int j = 0; j < 12; j++) {
+        for (int i = 0; i < 15-m; i++) {
+            for (int j = 0; j < 15; j++) {
                 for(int k=0; k<=m; k++) {
                     if(board[i+k][j] != player) {
                         break;
                     }
                     if(k==m) {
-                        score+=std::pow(2,m);
+                        score+=std::pow(10,m);
                         breakcon=1;
                     }
                 }
             }
         }
         //detect diagonal
-        for (int i = 0; i < 12-m; i++) {
-            for (int j = 0; j < 12-m; j++) {
+        for (int i = 0; i < 15-m; i++) {
+            for (int j = 0; j < 15-m; j++) {
                 for(int k=0; k<=m; k++) {
                     if(board[i+k][j+k] != player) {
                         break;
                     }
                     if(k==m) {
-                        score+=std::pow(2,m);
+                        score+=std::pow(10,m);
                         breakcon=1;
                     }
                 }
             }
         }
         //detect other diagonal
-        for (int i = 0; i < 12-m; i++) {
-            for (int j = m; j < 12; j++) {
+        for (int i = 0; i < 15-m; i++) {
+            for (int j = m; j < 15; j++) {
                 for(int k=0; k<=m; k++) {
                     if(board[i+k][j-k] != player) {
                         break;
                     }
                     if(k==m) {
-                        score+=std::pow(2,m);
+                        score+=std::pow(10,m);
                         breakcon=1;
                     }
                 }
@@ -230,8 +252,8 @@ int alignement_score(int player) {
 int evaluate_board(int player) {
     int score = 0;
     // // for every empty cell of the board with atleast one neighbor 
-    // for (int i = 0; i < 12; i++) {
-    //     for (int j = 0; j < 12; j++) {
+    // for (int i = 0; i < 15; i++) {
+    //     for (int j = 0; j < 15; j++) {
     //         if (neighbour_count[i][j] > 0 && board[i][j] == -1) {
     //             score += is_winning_move(i, j, player);
     //             score -= is_winning_move(i, j, 1-player);
@@ -246,7 +268,7 @@ int evaluate_board(int player) {
 int get_victor(){
     /// detect if 5 or more of the same color are in a row
     // detect horizontal
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 8; j++) {
             if (board[i][j] != -1 && board[i][j] == board[i][j+1] && board[i][j] == board[i][j+2] && board[i][j] == board[i][j+3] && board[i][j] == board[i][j+4]) {
                 return  board[i][j];
@@ -255,7 +277,7 @@ int get_victor(){
     }
     // detect vertical
     for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 12; j++) {
+        for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1 && board[i][j] == board[i+1][j] && board[i][j] == board[i+2][j] && board[i][j] == board[i+3][j] && board[i][j] == board[i+4][j]) {
                 return board[i][j];
             }
@@ -271,7 +293,7 @@ int get_victor(){
     }
     // detect other diagonal
     for (int i = 0; i < 8; i++) {
-        for (int j = 4; j < 12; j++) {
+        for (int j = 4; j < 15; j++) {
             if (board[i][j]!=-1 && board[i][j] == board[i+1][j-1] && board[i][j] == board[i+2][j-2] && board[i][j] == board[i+3][j-3] && board[i][j] == board[i+4][j-4]) {
                 return board[i][j];
             }
@@ -289,9 +311,9 @@ static PyObject* game_over(PyObject* self, PyObject* args) {
     /// read the new board state from the python script
     PyObject* board_state = PyTuple_GetItem(args, 0);
     /// convert the python object to a 2d array of char
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
-            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*12+j));
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*15+j));
         }
     }
     return Py_BuildValue("i", get_victor());
@@ -361,20 +383,20 @@ static PyObject* evaluate_board_py(PyObject* self, PyObject* args) {
     // get the player
     int player = PyLong_AsLong(PyTuple_GetItem(args, 1));
     /// convert the python object to a 2d array of char
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
-            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*12+j));
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*15+j));
         }
     }
     /// initialize the neighbour count array
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
             neighbour_count[i][j] = 0;
         }
     }
     /// count the number of neighbours for each cell
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1) {
                 add_neighbors(i, j);
             }
@@ -395,20 +417,20 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     // printf("got: p:%d x:%d y:%d\n",player, last_x, last_y);
     std::cout << "got: p:" << player << " x:" << last_x << " y:" << last_y << std::endl;
     /// convert the python object to a 2d array of char
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
-            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*12+j));
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            board[i][j] = PyLong_AsLong(PyList_GetItem(board_state, i*15+j));
         }
     }
     /// initialize the neighbour count array
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
             neighbour_count[i][j] = 0;
         }
     }
     /// count the number of neighbours for each cell
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1) {
                 add_neighbors(i, j);
             }
@@ -417,8 +439,8 @@ static PyObject* solve(PyObject* self, PyObject* args) {
 
     // // search for an easy dub
     // /// for every cell with count >0 and free on the board
-    for (int i = 0; i < 12; i++) {
-        for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
             if (neighbour_count[i][j] > 0 && board[i][j] == -1) {
                 // make the move
                 board[i][j] = player;
@@ -457,34 +479,38 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     int alpha = ALPHA;
     int beta = BETA;
     std::cout << "compute space is: " << widthN1*std::pow((8 + widthN), MAX_DEPTH) << std::endl;
-    for (int i = 0; i < 8+widthN1; i++) {
-        std::cout << "\n" << i << "/" << 8+widthN1;
-        // std::cout << "  "<<moves[i][0] << "," << moves[i][1] << std::endl;
-
-        if (moves[i][0] != -1) {
-            // make the move
-            board[moves[i][0]][moves[i][1]] = player;
-            // update neighbour count
-            add_neighbors(moves[i][0], moves[i][1]);
-            // get the score
-            score = -solve_alpha_beta(1-player, 0, -beta, -alpha, moves[i][0], moves[i][1]);
-            // undo the move
-            board[moves[i][0]][moves[i][1]] = -1;
-            // update neighbour count
-            sub_neighbors(moves[i][0], moves[i][1]);
-            // if the score is better than the best score
-            if (score > best_score) {
-                best_score = score;
-                best_x = moves[i][0];
-                best_y = moves[i][1];
-            }
-            // if the score is better than the alpha
-            if (score > alpha) {
-                alpha = score;
-            }
-            // if the alpha is greater than the beta
-            if (alpha >= beta) {
-                break;
+    // for (int i = 0; i < 8+widthN1; i++) {
+    // for each empty cell with a neighbour
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (board[i][j] == -1 && neighbour_count[i][j] > 0) {
+                // make the move
+                // std::cout << "\n" << i << "/" << 8+widthN1;
+                // std::cout << "  "<<moves[i][0] << "," << moves[i][1] << std::endl;
+                // make the move
+                board[i][j] = player;
+                // update neighbour count
+                add_neighbors(i, j);
+                // get the score
+                score = -solve_alpha_beta(1-player, 0, -beta, -alpha, i, j);
+                // undo the move
+                board[i][j] = -1;
+                // update neighbour count
+                sub_neighbors(i, j);
+                // if the score is better than the best score
+                if (score > best_score) {
+                    best_score = score;
+                    best_x = i;
+                    best_y = j;
+                }
+                // if the score is better than the alpha
+                if (score > alpha) {
+                    alpha = score;
+                }
+                // if the alpha is greater than the beta
+                if (alpha >= beta) {
+                    break;
+                }
             }
         }
     }

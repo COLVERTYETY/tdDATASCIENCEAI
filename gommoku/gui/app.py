@@ -12,7 +12,7 @@ class App(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Gommoku !!!")
-        self.geometry("500x500")
+        self.geometry("600x600")
         self.resizable(0, 0)
         self.configure(bg="lightgrey")
 
@@ -24,17 +24,17 @@ class App(tk.Tk):
         self.lower_frame = tk.Frame(self, bg="white")
         self.lower_frame.pack(side="bottom", fill="both", expand=True)
 
-        ### divide the uppper frame in a grid of 12*12
+        ### divide the uppper frame in a grid of 15*15
         self.upper_frame_grid = tk.Frame(self.upper_frame, bg="lightgrey")
         self.upper_frame_grid.pack(side="top", fill="both", expand=True)
-        for i in range(12):
+        for i in range(15):
             self.upper_frame_grid.grid_columnconfigure(i, weight=1)
-        for i in range(12):
+        for i in range(15):
             self.upper_frame_grid.grid_rowconfigure(i, weight=1)
         ### highlight each cell of the grid on mouse over
         global game_grid
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 game_grid[(i,j)] = -1
                 cell = tk.Label(self.upper_frame_grid, bg="white", text=str(i).rjust(2)+":"+str(j).rjust(2))
                 cell.grid(row=i, column=j)
@@ -64,8 +64,8 @@ class App(tk.Tk):
 
     def update_colors(self):
         global game_grid
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 cell = self.upper_frame_grid.grid_slaves(row=i, column=j)[0]
                 if game_grid[(i,j)] == -1:
                     cell["bg"] = "white"
@@ -86,8 +86,8 @@ class App(tk.Tk):
     def solve(self):
         global game_grid, history
         temp=[]
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 temp.append(game_grid[(i,j)])
         # check if there is a move in teh history
         if len(history) > 0:
@@ -125,8 +125,8 @@ class App(tk.Tk):
     def reset(self):
         global game_grid, history
         history = []
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 game_grid[(i,j)] = -1
                 cell = self.upper_frame_grid.grid_slaves(row=i, column=j)[0]
                 cell["bg"] = "white"
@@ -152,8 +152,8 @@ class App(tk.Tk):
         self.player_btn["bg"] = players[current_player]
         # get the evaluation of the board
         temp=[]
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 temp.append(game_grid[(i,j)])
         evaluation = gm.evaluate_board(temp,current_player)
         print(f"evaluation for player {players[current_player]} is:",evaluation)
@@ -173,8 +173,8 @@ class App(tk.Tk):
     def check_victory(self):
         global game_grid
         temp=[]
-        for i in range(12):
-            for j in range(12):
+        for i in range(15):
+            for j in range(15):
                 temp.append(game_grid[(i,j)])
         t = gm.game_over(temp)
         if t != -1:
