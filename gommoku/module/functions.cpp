@@ -4,9 +4,11 @@
 #include <iostream>
 #include <cmath>
 
-#define widthN 4
-#define widthN1 10
-#define MAX_DEPTH 6
+#define widthN 5
+#define widthN1 22
+#define nweight 5
+#define starweight 1
+#define MAX_DEPTH 5
 #define winmweight 999
 #define BETA 1000000
 #define ALPHA -1000000
@@ -25,7 +27,7 @@ void add_neighbors(int x, int y) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] += 2;
+            neighbour_count[j][k] += nweight;
         }
     }
 }
@@ -36,7 +38,7 @@ void add_star_neighbors(int x, int y) {
         j = x + starpattern[i][0];
         int k = y + starpattern[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] += 1;
+            neighbour_count[j][k] += starweight;
         }
     }
 }
@@ -47,7 +49,7 @@ void sub_star_neighbors(int x, int y) {
         j = x + starpattern[i][0];
         int k = y + starpattern[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] -= 1;
+            neighbour_count[j][k] -= starweight;
         }
     }
 }
@@ -58,7 +60,7 @@ void sub_neighbors(int x, int y) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] -= 1;
+            neighbour_count[j][k] -= nweight;
         }
     }
 }
@@ -353,12 +355,14 @@ int solve_alpha_beta(int player, int depth, int alpha, int beta, int last_x, int
             board[moves[i][0]][moves[i][1]] = player;
             // update neighbour count
             add_neighbors(moves[i][0], moves[i][1]);
+            add_star_neighbors(moves[i][0], moves[i][1]);
             // get the score
             score = -solve_alpha_beta(1-player, depth+1, -beta, -alpha, moves[i][0], moves[i][1]);
             // undo the move
             board[moves[i][0]][moves[i][1]] = -1;
             // update neighbour count
             sub_neighbors(moves[i][0], moves[i][1]);
+            sub_star_neighbors(moves[i][0], moves[i][1]);
             // if the score is better than the best score
             if (score > best_score) {
                 best_score = score;
@@ -433,6 +437,7 @@ static PyObject* solve(PyObject* self, PyObject* args) {
         for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1) {
                 add_neighbors(i, j);
+                add_star_neighbors(i,j);
             }
         }
     }
@@ -475,43 +480,44 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     for (int i = 0; i < 8+widthN1; i++) {
             PyList_SetItem(move_list, i, Py_BuildValue("(ii)", moves[i][0], moves[i][1]));
     }
+
     // for every possible move
     int alpha = ALPHA;
     int beta = BETA;
-    std::cout << "compute space is: " << widthN1*std::pow((8 + widthN), MAX_DEPTH) << std::endl;
-    // for (int i = 0; i < 8+widthN1; i++) {
+    // std::cout << "compute space is: " << widthN1*std::pow((8 + widthN), MAX_DEPTH) << std::endl;
     // for each empty cell with a neighbour
-    for (int i = 0; i < 15; i++) {
-        for (int j = 0; j < 15; j++) {
-            if (board[i][j] == -1 && neighbour_count[i][j] > 0) {
-                // make the move
-                // std::cout << "\n" << i << "/" << 8+widthN1;
-                // std::cout << "  "<<moves[i][0] << "," << moves[i][1] << std::endl;
-                // make the move
-                board[i][j] = player;
-                // update neighbour count
-                add_neighbors(i, j);
-                // get the score
-                score = -solve_alpha_beta(1-player, 0, -beta, -alpha, i, j);
-                // undo the move
-                board[i][j] = -1;
-                // update neighbour count
-                sub_neighbors(i, j);
-                // if the score is better than the best score
-                if (score > best_score) {
-                    best_score = score;
-                    best_x = i;
-                    best_y = j;
-                }
-                // if the score is better than the alpha
-                if (score > alpha) {
-                    alpha = score;
-                }
-                // if the alpha is greater than the beta
-                if (alpha >= beta) {
-                    break;
-                }
+    for (int i = 0; i < 8+widthN1; i++) {
+        if (moves[i][0] != -1) {
+            // make the move
+            // std::cout << "\n" << i << "/" << 8+widthN1;
+            // std::cout << "  "<<moves[i][0] << "," << moves[i][1] << std::endl;
+            // make the move
+            board[moves[i][0]][moves[i][1]] = player;
+            // update neighbour count
+            add_neighbors(moves[i][0], moves[i][1]);
+            add_star_neighbors(moves[i][0],moves[i][1]);
+            // get the score
+            score = -solve_alpha_beta(1-player, 0, -beta, -alpha, moves[i][0], moves[i][1]);
+            // undo the move
+            board[moves[i][0]][moves[i][1]] = -1;
+            // update neighbour count
+            sub_neighbors(moves[i][0], moves[i][1]);
+            sub_star_neighbors(moves[i][0],moves[i][1]);
+            // if the score is better than the best score
+            if (score > best_score) {
+                best_score = score;
+                best_x = moves[i][0];
+                best_y = moves[i][1];
             }
+            // if the score is better than the alpha
+            if (score > alpha) {
+                alpha = score;
+            }
+            // if the alpha is greater than the beta
+            if (alpha >= beta) {
+                break;
+            }
+            
         }
     }
     
