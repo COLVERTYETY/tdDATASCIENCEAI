@@ -17,50 +17,51 @@
 int board[15][15];
 int neighbors[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
 int starpattern[][2] = {{2,0},{3,0},{4,0},{-2,0},{-3,0},{-4,0},{0,-2},{0,-3},{0,-4},{0,2},{0,3},{0,4},{2,2},{3,3},{4,4},{2,-2},{3,-3},{4,-4},{-2,-2},{-3,-3},{-4,-4},{-2,2},{-3,3},{-4,4}};
-int neighbour_count[15][15];
+int neighbour_count_0[15][15];
+int neighbour_count_1[15][15];
 
 static PyObject* myError;
 
-void add_neighbors(int x, int y) {
+void add_neighbors(int x, int y, int neighbors_count[15][15]) {
     int i, j;
     for (i = 0; i < 8; i++) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] += nweight;
+            neighbors_count[j][k] += nweight;
         }
     }
 }
 
-void add_star_neighbors(int x, int y) {
+void add_star_neighbors(int x, int y, int neighbors_count[15][15]) {
     int i, j;
     for (i = 0; i < 24; i++) {
         j = x + starpattern[i][0];
         int k = y + starpattern[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] += starweight;
+            neighbors_count[j][k] += starweight;
         }
     }
 }
 
-void sub_star_neighbors(int x, int y) {
+void sub_star_neighbors(int x, int y, int neighbors_count[15][15]) {
     int i, j;
     for (i = 0; i < 24; i++) {
         j = x + starpattern[i][0];
         int k = y + starpattern[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] -= starweight;
+            neighbors_count[j][k] -= starweight;
         }
     }
 }
 
-void sub_neighbors(int x, int y) {
+void sub_neighbors(int x, int y, int neighbors_count[15][15]) {
     int i, j;
     for (i = 0; i < 8; i++) {
         j = x + neighbors[i][0];
         int k = y + neighbors[i][1];
         if (j >= 0 && j < 15 && k >= 0 && k < 15) {
-            neighbour_count[j][k] -= nweight;
+            neighbors_count[j][k] -= nweight;
         }
     }
 }
@@ -77,7 +78,7 @@ int get_stalemate() {
     return 1;
 }
 
-void get_most_neighbors(int list[][2], int start,int Q) {
+void get_most_neighbors(int list[][2], int start,int Q, int neighbors_count[15][15]) {
     int counts[Q];
     int i, j;
     for (i = 0; i < Q; i++) {
@@ -88,7 +89,7 @@ void get_most_neighbors(int list[][2], int start,int Q) {
         for (j = 0; j < 15; j++) {
             
             // if the cell is not empty and has a count higher than 0 and empty in the board
-            if ((neighbour_count[i][j] > 0) && (board[i][j] == -1)) {
+            if ((neighbors_count[i][j] > 0) && (board[i][j] == -1)) {
                 // if not already in the list
                 int found = 0;
                 for(int l = 0; l < start; l++) {
@@ -99,7 +100,7 @@ void get_most_neighbors(int list[][2], int start,int Q) {
                 }
                     if(found == 0) {
                         for(int l = 0; l < Q; l++) {
-                            if (neighbour_count[i][j] > counts[l]) {
+                            if ((neighbors_count[i][j]) > counts[l]) {
                                 // shift all the other counts down
                                 for (int m = Q - 1; m > l; m--) {
                                     counts[m] = counts[m - 1];
@@ -108,7 +109,7 @@ void get_most_neighbors(int list[][2], int start,int Q) {
                                     list[m+start][1] = list[m - 1][1];
                                 }
                                 // set the new count
-                                counts[l] = neighbour_count[i][j];
+                                counts[l] = (neighbors_count[i][j]);
                                 // set the new cell
                                 list[l+start][0] = i;
                                 list[l+start][1] = j;
@@ -252,19 +253,10 @@ int alignement_score(int player) {
 }
 
 int evaluate_board(int player) {
-    int score = 0;
-    // // for every empty cell of the board with atleast one neighbor 
-    // for (int i = 0; i < 15; i++) {
-    //     for (int j = 0; j < 15; j++) {
-    //         if (neighbour_count[i][j] > 0 && board[i][j] == -1) {
-    //             score += is_winning_move(i, j, player);
-    //             score -= is_winning_move(i, j, 1-player);
-    //         }
-    //     }
-    // }
-    score+=alignement_score(player);
-    score-=alignement_score(1-player);
-    return score;
+    // int score = 0;
+    // score+=alignement_score(player);
+    // score-=alignement_score(1-player);
+    return alignement_score(player) -alignement_score(1-player);
 }
 
 int get_victor(){
@@ -329,13 +321,6 @@ int solve_alpha_beta(int player, int depth, int alpha, int beta, int last_x, int
     }
     int victor = get_victor();
     if (victor != -1) {
-        // return victor *((MAX_DEPTH - depth)*(MAX_DEPTH - depth));
-        // std::cout << "victor: " << victor << " "<<evaluate_board(player)<<" "<<evaluate_board(player)*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth))<<std::endl;
-        // if (victor==player) {
-        //     return evaluate_board(player)*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth));
-        // } else {
-        //     return -evaluate_board(player)*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth));
-        // }
         return evaluate_board(1-player)*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth));
     }
     /// explore possible moves
@@ -347,22 +332,33 @@ int solve_alpha_beta(int player, int depth, int alpha, int beta, int last_x, int
         moves[i][0] = -1;
     }
     get_neighbours(moves,0,last_x,last_y);
-    get_most_neighbors(moves,9,widthN);
+    get_most_neighbors(moves,9,widthN/2,neighbour_count_0);
+    get_most_neighbors(moves,9+widthN/2,widthN/2,neighbour_count_1);
     // for every possible move
     for (int i = 0; i < 8+widthN; i++) {
         if (moves[i][0] != -1) {
             // make the move
             board[moves[i][0]][moves[i][1]] = player;
-            // update neighbour count
-            add_neighbors(moves[i][0], moves[i][1]);
-            add_star_neighbors(moves[i][0], moves[i][1]);
+            // update neighbour count   
+            if(player==0) {
+                add_neighbors(moves[i][0], moves[i][1],neighbour_count_0);
+                add_star_neighbors(moves[i][0], moves[i][1], neighbour_count_0);
+            } else {
+                add_neighbors(moves[i][0], moves[i][1],neighbour_count_1);
+                add_star_neighbors(moves[i][0], moves[i][1], neighbour_count_1);
+            }
             // get the score
             score = -solve_alpha_beta(1-player, depth+1, -beta, -alpha, moves[i][0], moves[i][1]);
             // undo the move
             board[moves[i][0]][moves[i][1]] = -1;
             // update neighbour count
-            sub_neighbors(moves[i][0], moves[i][1]);
-            sub_star_neighbors(moves[i][0], moves[i][1]);
+            if(player==0) {
+                sub_neighbors(moves[i][0], moves[i][1],neighbour_count_0);
+                sub_star_neighbors(moves[i][0], moves[i][1], neighbour_count_0);
+            } else {
+                sub_neighbors(moves[i][0], moves[i][1],neighbour_count_1);
+                sub_star_neighbors(moves[i][0], moves[i][1], neighbour_count_1);
+            }
             // if the score is better than the best score
             if (score > best_score) {
                 best_score = score;
@@ -395,14 +391,21 @@ static PyObject* evaluate_board_py(PyObject* self, PyObject* args) {
     /// initialize the neighbour count array
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
-            neighbour_count[i][j] = 0;
+            neighbour_count_0[i][j] = 0;
+            neighbour_count_1[i][j] = 0;
         }
     }
     /// count the number of neighbours for each cell
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1) {
-                add_neighbors(i, j);
+            if(board[i][j]==0) {
+                add_neighbors(i,j,neighbour_count_0);
+                add_star_neighbors(i,j, neighbour_count_0);
+            } else {
+                add_neighbors(i, j,neighbour_count_1);
+                add_star_neighbors(i, j, neighbour_count_1);
+            }
             }
         }
     }
@@ -429,15 +432,21 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     /// initialize the neighbour count array
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
-            neighbour_count[i][j] = 0;
+            neighbour_count_0[i][j] = 0;
+            neighbour_count_1[i][j] = 0;
         }
     }
     /// count the number of neighbours for each cell
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1) {
-                add_neighbors(i, j);
-                add_star_neighbors(i,j);
+                if(board[i][j]==0) {
+                    add_neighbors(i,j,neighbour_count_0);
+                    add_star_neighbors(i,j, neighbour_count_0);
+                } else {
+                    add_neighbors(i, j,neighbour_count_1);
+                    add_star_neighbors(i, j, neighbour_count_1);
+                }
             }
         }
     }
@@ -446,7 +455,7 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     // /// for every cell with count >0 and free on the board
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
-            if (neighbour_count[i][j] > 0 && board[i][j] == -1) {
+            if (((player==0 &&neighbour_count_0[i][j] > 0)||(player==1 &&neighbour_count_1[i][j] > 0)) && board[i][j] == -1) {
                 // make the move
                 board[i][j] = player;
                 if (get_victor() == player) {
@@ -473,7 +482,8 @@ static PyObject* solve(PyObject* self, PyObject* args) {
         moves[i][1] = -1;
     }
     get_neighbours(moves,0,last_x,last_y);
-    get_most_neighbors(moves,9,widthN1);
+    get_most_neighbors(moves,9,widthN1/2,neighbour_count_0);
+    get_most_neighbors(moves,9+widthN1/2,widthN1/2,neighbour_count_1);
     // create a list of tuples to return
     PyObject* move_list = PyList_New(8+widthN1);
     // fill the list with the moves
@@ -494,15 +504,25 @@ static PyObject* solve(PyObject* self, PyObject* args) {
             // make the move
             board[moves[i][0]][moves[i][1]] = player;
             // update neighbour count
-            add_neighbors(moves[i][0], moves[i][1]);
-            add_star_neighbors(moves[i][0],moves[i][1]);
+            if(player==0) {
+                add_neighbors(moves[i][0], moves[i][1],neighbour_count_0);
+                add_star_neighbors(moves[i][0], moves[i][1], neighbour_count_0);
+            } else {
+                add_neighbors(moves[i][0], moves[i][1],neighbour_count_1);
+                add_star_neighbors(moves[i][0], moves[i][1], neighbour_count_1);
+            }
             // get the score
             score = -solve_alpha_beta(1-player, 0, -beta, -alpha, moves[i][0], moves[i][1]);
             // undo the move
             board[moves[i][0]][moves[i][1]] = -1;
             // update neighbour count
-            sub_neighbors(moves[i][0], moves[i][1]);
-            sub_star_neighbors(moves[i][0],moves[i][1]);
+            if(player==0) {
+                sub_neighbors(moves[i][0], moves[i][1],neighbour_count_0);
+                sub_star_neighbors(moves[i][0], moves[i][1], neighbour_count_0);
+            } else {
+                sub_neighbors(moves[i][0], moves[i][1],neighbour_count_1);
+                sub_star_neighbors(moves[i][0], moves[i][1], neighbour_count_1);
+            }
             // if the score is better than the best score
             if (score > best_score) {
                 best_score = score;

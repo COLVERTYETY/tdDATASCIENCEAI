@@ -93,7 +93,7 @@ class App(tk.Tk):
         if len(history) > 0:
             pos = history[-1]
         else:
-            pos = (5,5)
+            pos = (7,7)
         # check if the game is already solved
         if self.check_victory():
             return
@@ -106,7 +106,7 @@ class App(tk.Tk):
         # display the potential moves
         self.update_colors()
         for move in moves:
-            if move[0] != -1 and move[1] != -1:
+            if move[0] != -1 and move[1] != -1 and (move[0],move[1]) not in history:
                 cell = self.upper_frame_grid.grid_slaves(row=move[0], column=move[1])[0]
                 cell["bg"] = players2[current_player]
         # we update the game grid
