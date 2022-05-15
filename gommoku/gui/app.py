@@ -1,6 +1,9 @@
 import tkinter as tk
 import gommoku as gm
+import numpy as np
 import time 
+import node as nd
+import time
 
 players = ["red","blue"]
 players2 = ["pink","lightblue"]
@@ -85,11 +88,27 @@ class App(tk.Tk):
 
     def solve(self):
         global game_grid, history
-        temp=[]
+        # temp=[]
+        # for i in range(15):
+        #     for j in range(15):
+        #         temp.append(game_grid[(i,j)])
+        # check if there is a move in teh history
+        temp=[[-1 for i in range(15)] for j in range(15)]
         for i in range(15):
             for j in range(15):
-                temp.append(game_grid[(i,j)])
-        # check if there is a move in teh history
+                # temp.append(game_grid[(i,j)])
+                if game_grid[(i,j)] == -1:
+                    temp[i][j]=0
+                elif game_grid[(i,j)] == 0:
+                    temp[i][j]=1
+                elif game_grid[(i,j)] == 1:
+                    temp[i][j]=-1
+        cp = 0
+        if current_player == 0:
+            cp = -1
+        elif current_player == 1:
+            cp = 1
+        # root = nd.Node(np.array([7,7]), None, cp, 120)
         if len(history) > 0:
             pos = history[-1]
         else:
@@ -99,16 +118,19 @@ class App(tk.Tk):
             return
         # we play
         start = time.time()
-        (moves,(score,x,y)) = gm.solve(temp,current_player,pos[0],pos[1])
+        # (moves,(score,x,y)) = gm.solve(temp,current_player,pos[0],pos[1])
+        # (x,y) = gm.solve_mcts(temp,current_player)
+        # (x,y) = nd.Node.mcts(np.array(temp),np.array(temp.copy()),root)
+        (x,y) = nd.solve(np.array(temp),cp,pos[0],pos[1])
         stop = time.time()
         print(f"time taken : {stop-start}s")
-        print("move score is",score)
+        # print("move score is",score)
         # display the potential moves
         self.update_colors()
-        for move in moves:
-            if move[0] != -1 and move[1] != -1 and (move[0],move[1]) not in history:
-                cell = self.upper_frame_grid.grid_slaves(row=move[0], column=move[1])[0]
-                cell["bg"] = players2[current_player]
+        # for move in moves:
+        #     if move[0] != -1 and move[1] != -1 and (move[0],move[1]) not in history:
+        #         cell = self.upper_frame_grid.grid_slaves(row=move[0], column=move[1])[0]
+        #         cell["bg"] = players2[current_player]
         # we update the game grid
         game_grid[(x,y)] = current_player
         # we update the gui
@@ -172,11 +194,27 @@ class App(tk.Tk):
 
     def check_victory(self):
         global game_grid
-        temp=[]
+        temp=[[-1 for i in range(15)] for j in range(15)]
         for i in range(15):
             for j in range(15):
-                temp.append(game_grid[(i,j)])
-        t = gm.game_over(temp)
+                # temp.append(game_grid[(i,j)])
+                if game_grid[(i,j)] == -1:
+                    temp[i][j]=0
+                elif game_grid[(i,j)] == 0:
+                    temp[i][j]=1
+                elif game_grid[(i,j)] == 1:
+                    temp[i][j]=-1
+        start = time.time()
+        t = nd.get_winner(np.array(temp))
+        stop = time.time()
+        print(f"time taken for w: {stop-start}s", t)
+        if t == 0:
+            t=-1
+        elif t == -1:
+            t=1
+        else:
+            t=0
+        print(f"winner is {t}")
         if t != -1:
             self.upper_frame_grid.configure(bg=players2[t])
 

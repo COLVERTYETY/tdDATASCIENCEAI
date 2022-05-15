@@ -1,5 +1,6 @@
 README.md
 functions.cpp
+node.cpp
 setup.py
 gommoku.egg-info/PKG-INFO
 gommoku.egg-info/SOURCES.txt

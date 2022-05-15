@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
 
-module = Extension("gommoku", sources=["functions.cpp"], extra_compile_args=["-Wall","-O3","-fno-stack-protector","-march=native","-fPIC","-fopenmp"])
+module = Extension("gommoku", sources=["functions.cpp", "node.cpp"], extra_compile_args=["-Wall","-O3","-fno-stack-protector","-march=native","-fPIC","-fopenmp"])
 
 
 def main():

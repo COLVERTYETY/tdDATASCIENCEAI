@@ -1,24 +1,35 @@
 #include <Python.h>
 
+#include <time.h>
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
+#include <map>
+#include <utility>
+#include "node.h"
 
 #define widthN 5
-#define widthN1 22
+#define widthN1 30
 #define nweight 5
 #define starweight 1
 #define MAX_DEPTH 5
-#define winmweight 999
+#define TIME_LIMIT 40000
+#define winmweight 999999999
 #define BETA 1000000
 #define ALPHA -1000000
 
 /// 2d array of char to hold the game board, 15*15
 int board[15][15];
+node *root;
+int new_board[15][15];
+int initboard=0;
+int neightbours[15][15];
 int neighbors[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
 int starpattern[][2] = {{2,0},{3,0},{4,0},{-2,0},{-3,0},{-4,0},{0,-2},{0,-3},{0,-4},{0,2},{0,3},{0,4},{2,2},{3,3},{4,4},{2,-2},{3,-3},{4,-4},{-2,-2},{-3,-3},{-4,-4},{-2,2},{-3,3},{-4,4}};
 int neighbour_count_0[15][15];
 int neighbour_count_1[15][15];
+//hashmap to store the score of each table
+std::map<size_t, std::pair<int,int>> score_map;
 
 static PyObject* myError;
 
@@ -263,14 +274,14 @@ int get_victor(){
     /// detect if 5 or more of the same color are in a row
     // detect horizontal
     for (int i = 0; i < 15; i++) {
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 11; j++) {
             if (board[i][j] != -1 && board[i][j] == board[i][j+1] && board[i][j] == board[i][j+2] && board[i][j] == board[i][j+3] && board[i][j] == board[i][j+4]) {
                 return  board[i][j];
             }
         }
     }
     // detect vertical
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 11; i++) {
         for (int j = 0; j < 15; j++) {
             if (board[i][j] != -1 && board[i][j] == board[i+1][j] && board[i][j] == board[i+2][j] && board[i][j] == board[i+3][j] && board[i][j] == board[i+4][j]) {
                 return board[i][j];
@@ -278,15 +289,15 @@ int get_victor(){
         }
     }
     // detect diagonal
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
+    for (int i = 0; i < 11; i++) {
+        for (int j = 0; j < 11; j++) {
             if (board[i][j] != -1 && board[i][j] == board[i+1][j+1] && board[i][j] == board[i+2][j+2] && board[i][j] == board[i+3][j+3] && board[i][j] == board[i+4][j+4]) {
                 return board[i][j];
             }
         }
     }
     // detect other diagonal
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 11; i++) {
         for (int j = 4; j < 15; j++) {
             if (board[i][j]!=-1 && board[i][j] == board[i+1][j-1] && board[i][j] == board[i+2][j-2] && board[i][j] == board[i+3][j-3] && board[i][j] == board[i+4][j-4]) {
                 return board[i][j];
@@ -313,6 +324,119 @@ static PyObject* game_over(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", get_victor());
 }
 
+// mcts simulation
+int mcts_simulation(int player) {
+    // choose a random empty cell
+    int x, y;
+    x = rand()%15;
+    y = rand()%15;
+    while(board[x][y]!=-1) {
+        //step to the next cell*
+        x+=1;
+        x=x%15;
+        if(x==0) {
+            y+=1;
+            y=y%15;
+        }
+    }
+    // play the move
+    board[x][y] = player;
+    // evaluate the board
+    int res = get_victor();
+    if(res != -1) {
+        board[x][y] = -1;
+        return res;
+    }
+    // play the other player
+    res = mcts_simulation(1-player);
+    board[x][y] = -1;
+    return res;
+}
+
+
+// hash the board
+size_t hash_board() {
+    size_t hash = 0x3a7eb429;
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            hash = hash<<3;
+            hash ^= board[i][j]+1;
+        }
+    }
+    return hash;
+}
+
+// selection mcts
+int solve_alpha_beta_mcts(int player, int depth, double alpha, double beta, int &best_x, int &best_y) {
+    // if the game is over
+    int v = get_victor();
+    if (get_victor() != -1) {
+        return v;
+    }
+    // alpha beta
+    double best_score = -1000000;
+    int best_x_ = -1;
+    int best_y_ = -1;
+    // for each possible move
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (board[i][j] == -1 && ((neighbour_count_0)[i][j] > 0 || (neighbour_count_1)[i][j] > 0)) {
+                // play the move
+                board[i][j] = player;
+                add_neighbors(i,j,neighbour_count_0);
+                // check if the child is in the hash map
+                size_t hash = hash_board();
+                if (score_map.find(hash) != score_map.end()) {
+                    // if yes, get the score
+                    std::pair score = score_map[hash];
+                    int res  = -solve_alpha_beta_mcts(1-player, depth+1, -beta, -alpha, best_x, best_y);
+                    score.first+=res;
+                    score.second+=1;
+                    score_map[hash] = score;
+                    double score_ = (double)score.first/(double)score.second;
+                    // if the score is better than the best score
+                    if (score_ > best_score) {
+                        // update the best score
+                        best_score = score_;
+                        best_x_ = i;
+                        best_y_ = j;
+                    }
+                    // if the score is better than the alpha
+                    if (score_ > alpha) {
+                        // update the alpha
+                        alpha = score_;
+                    }
+                    // if the alpha is greater than the beta
+                    if (alpha >= beta) {
+                        // return the best score
+                        best_x = best_x_;
+                        best_y = best_y_;
+                        return best_score;
+                    }
+
+                }
+                else {
+                    // if not, expand the child
+                    // and get the score
+                    int res = mcts_simulation(1-player);
+                    // undo the move
+                    board[i][j] = -1;
+                    sub_neighbors(i,j,neighbour_count_0);
+                    // add the score to the hash map
+                    score_map[hash] = std::make_pair(res,1);
+                    return res;
+                }
+            }
+        }
+    }
+    // return the best score
+    best_x = best_x_;
+    best_y = best_y_;
+    return best_score;
+}
+
+
+
 int solve_alpha_beta(int player, int depth, int alpha, int beta, int last_x, int last_y) {
     // if the game is over
     // if the depth is MAX
@@ -321,8 +445,9 @@ int solve_alpha_beta(int player, int depth, int alpha, int beta, int last_x, int
     }
     int victor = get_victor();
     if (victor != -1) {
-        return evaluate_board(1-player)*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth));
+        return winmweight*((MAX_DEPTH+1 - depth)*(MAX_DEPTH+1 - depth));
     }
+
     /// explore possible moves
     int best_score = -100000000;
     int score;
@@ -412,6 +537,82 @@ static PyObject* evaluate_board_py(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", evaluate_board(player));
 }
 
+// python to solve the game with mcts
+static PyObject* solve_mcts(PyObject* self, PyObject* args) {
+    /// read the new board state from the python script
+    PyObject* board_state = PyTuple_GetItem(args, 0);
+    // get the player
+    int player = (PyLong_AsLong(PyTuple_GetItem(args, 1))==0)?-1:1;
+    /// convert the python object to a 2d array of char
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            switch (PyLong_AsLong(PyList_GetItem(board_state, i*15+j))) {
+                case 0:
+                    board[i][j] = -1;
+                    break;
+                case 1:
+                    board[i][j] = 1;
+                    break;
+                case -1:
+                    board[i][j] = 0;
+                    break;
+            }
+        }
+    }
+
+    /// initialize the neighbour count array
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            neighbour_count_0[i][j] = 0;
+            neighbour_count_1[i][j] = 0;
+        }
+    }
+    /// count the number of neighbours for each cell and count the number of remaining turns
+    int remaining = 120;
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (board[i][j] != 0) {
+                remaining--;
+                add_neighbors(i, j,neighbour_count_0);
+                add_star_neighbors(i, j, neighbour_count_1);
+            }
+        }
+    }
+    // display the board
+    for(int i=0;i<15;i++) {
+        for(int j=0;j<15;j++) {
+            switch (board[i][j]) {
+                case 0:
+                    std::cout<<"-";
+                    break;
+                case 1:
+                    std::cout<<"X";
+                    break;
+                case -1:
+                    std::cout<<"O";
+                    break;
+            }
+        }
+        std::cout<<std::endl;
+    }
+    
+    int x,y;
+    root = new node(7,7, NULL, player,remaining);
+    root->isroot=1;
+    // root = root->update_root(new_board, board, neighbour_count_0, neighbour_count_1, player);
+    std::cout<<"remaining: "<<remaining<<std::endl;
+    // int simulations = root->rootmove(board, neighbour_count_0, neighbour_count_1, 5000, remaining,&x, &y);
+    int simulations = root->rootmove_max(board, neighbour_count_0, 5000, remaining, &x, &y);
+    // display all moves pf children
+    for(node* n : root->children){
+        std::cout<< "( "<<n->x<<" | "<<n->y<<" )= "<< (double)(n->wins)<<" "<<(double)(n->simulations) << " "<< (double)(n->wins)/(double)(n->simulations)<<std::endl;
+    }
+    std::cout<<"best x,y is: "<<x<<" "<<y<<std::endl;
+    delete root;
+    std::cout<< "number of simulations: " <<simulations<<std::endl;
+    return Py_BuildValue("(i,i)", x, y);
+}
+
 /// pythpn function to solve the game
 static PyObject* solve(PyObject* self, PyObject* args) {
     /// read the new board state from the python script
@@ -422,7 +623,7 @@ static PyObject* solve(PyObject* self, PyObject* args) {
     int last_x = PyLong_AsLong(PyTuple_GetItem(args, 2));
     int last_y = PyLong_AsLong(PyTuple_GetItem(args, 3));
     // printf("got: p:%d x:%d y:%d\n",player, last_x, last_y);
-    std::cout << "got: p:" << player << " x:" << last_x << " y:" << last_y << std::endl;
+    std::cout << "got: p:" << player << " x:" << last_x << " y:" << last_y <<std::endl;
     /// convert the python object to a 2d array of char
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
@@ -571,6 +772,12 @@ static PyMethodDef gommoku_methods[] = {
         solve,
         METH_VARARGS,
         "Return the best move",
+    },
+    {
+        "solve_mcts",
+        solve_mcts,
+        METH_VARARGS,
+        "Return the best move with mcts??",
     },
     {
         "evaluate_board",
