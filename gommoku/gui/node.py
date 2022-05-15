@@ -1,3 +1,4 @@
+from asyncio import start_server
 from dataclasses import replace
 import numpy as np
 import cv2
@@ -6,6 +7,8 @@ import time
 from numba import jit
 
 
+
+score_board = np.zeros((15,15))
 cneighbour = np.array([[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]])
 # cneighbour = np.array([[-1,1,0,-1,1,0,-1,1],[-1,-1,-1,0,0,1,1,1]])
 seq = np.array([1,1,1,1,1])
@@ -168,6 +171,40 @@ def unplay(coords,board, neighbours):
     board[coords] = 0
     neighbours[cneighbour+ coords] -=1
 
+# def winning_move(board, pos):
+#     txt1 = '1 1 1 1 1'
+#     txt2 = '-1 -1 -1 -1 -1'
+#     column = board[:,pos[1]]
+#     # print(np.array2string(column))
+#     if np.array2string(column).count(txt1)>0:
+#         return 1
+#     elif np.array2string(column).count(txt2)>0:
+#         return -1
+#     row = board[pos[0],:]
+#     # print(np.array2string(row))
+#     if np.array2string(row).count( txt1)>0:
+#         return 1
+#     elif np.array2string(row).count( txt2)>0:
+#         return -1
+#     diag = np.diag(board,k=pos[0]-pos[1])
+#     # print(np.array2string(diag))
+#     if np.array2string(diag).count(txt1)>0:
+#         return 1
+#     elif np.array2string(diag).count(txt2)>0:
+#         return -1
+#     otherdiag = np.diag(np.fliplr(board),k=pos[1]-pos[0])
+#     # print(np.array2string(otherdiag))
+#     if np.array2string(otherdiag).count(txt1)>0:
+#         return 1
+#     elif np.array2string(otherdiag).count(txt2)>0:
+#         return -1
+#     return 0
+
+def player_win(board, player):
+    board_ = board.copy()
+    board_[ board!=player] =0
+    board_[ board==player] =1
+    return (strict_sequence(board_, seq)>0) + (strict_sequence(board_.T, seq)>0) + (strict_sequence(board_, diag, diag.astype('uint8'))>0) + (strict_sequence(board_, otherdiag,otherdiag.astype('uint8'))>0)
 
 def get_winner(board):
     # check the row
@@ -201,6 +238,11 @@ def find_sequence(arr, seq,mask_=None):
     idx = np.where(S == 0)[0]
     return idx.shape[0]
 
+def strict_sequence(arr,seq,mask_=None):
+    S = cv2m(arr.astype('uint8'),seq.astype('uint8'),method=cv2.TM_SQDIFF,mask=mask_)
+    idx = np.where(S == 0)[0]
+    return idx.shape[0] == seq.shape[0]
+
 # def evaluate_convolve(board,player, x, y):
 #     col = board[max(0, x-4):min(15, x+5), y]
 #     row = board[x, max(0, y-4):min(15, y+5)]
@@ -233,11 +275,11 @@ def convolution_score(board,player):
     val+= np.sum(cv2m(board_.astype('uint8'),  p*otherdiag.astype('uint8'),method=cv2.TM_SQDIFF, mask=otherdiag.astype('uint8'))**4)
     val+= np.sum(cv2m(board_.astype('uint8'),  p*eye3.astype('uint8'),method=cv2.TM_SQDIFF, mask=eye3_mask.astype('uint8')))
     val+= np.sum(cv2m(board_.astype('uint8'),  p*cross3.astype('uint8'),method=cv2.TM_SQDIFF, mask=cross3.astype('uint8')))
-    val+=np.sum(cv2m(board_.astype('uint8'),   p*line.astype('uint8'),method=cv2.TM_SQDIFF, mask=seq.astype('uint8'))**2)
-    val+=np.sum(cv2m(board_.T.astype('uint8'), p*line.astype('uint8'),method=cv2.TM_SQDIFF, mask=seq.astype('uint8'))**2)
-    val+=np.sum(cv2m(board_.astype('uint8'),   p*line_diag.astype('uint8'),method=cv2.TM_SQDIFF, mask=diag.astype('uint8'))**2)
-    val+=np.sum(cv2m(board_.astype('uint8'),   p*line_otherdiag.astype('uint8'),method=cv2.TM_SQDIFF, mask=otherdiag.astype('uint8'))**2)
-    return float('1e-30')/(val**2)  # caus lower is better and we want highr
+    # val+=np.sum(cv2m(board_.astype('uint8'),   p*line.astype('uint8'),method=cv2.TM_SQDIFF, mask=seq.astype('uint8')))
+    # val+=np.sum(cv2m(board_.T.astype('uint8'), p*line.astype('uint8'),method=cv2.TM_SQDIFF, mask=seq.astype('uint8')))
+    # val+=np.sum(cv2m(board_.astype('uint8'),   p*line_diag.astype('uint8'),method=cv2.TM_SQDIFF, mask=diag.astype('uint8')))
+    # val+=np.sum(cv2m(board_.astype('uint8'),   p*line_otherdiag.astype('uint8'),method=cv2.TM_SQDIFF, mask=otherdiag.astype('uint8')))
+    return (val**2)  # caus lower is better and we want highr
 
 def draw(board):
     for i in range(15):
@@ -287,6 +329,15 @@ def evaluate_board(board, player):
 def get_first_layer(board, neighbour):
     return np.where((board == 0) * (neighbour > 0))
 
+def get_score_move(board,n):
+    possible = score_board.copy()
+    possible[board != 0] = 0
+    maxamount = min(n,len(np.where(possible>0)[0]))
+    if maxamount == 0:
+        return -1
+    ind = np.unravel_index(np.argsort(possible, axis=None)[::-1][:maxamount], possible.shape)
+    return ind
+
 def get_immediate(board,idx):
     # get immediate neighbours
     t = np.tile(cneighbour.T, idx[0].shape[0]).T + np.repeat(np.array(idx).T, 8, axis=0)
@@ -321,17 +372,30 @@ def get_moves(board, neighbours,n):
 def alpha_beta_prunning(board, neighbours,player, alpha, beta, depth, idx):
     if depth == 0 :
         # return evaluate_board(board, player)-evaluate_board(board, -player)
-        return convolution_score(board,-player) / convolution_score(board,player)
-    winner = get_winner(board)
-    if winner != 0:
-        return -winner*player*depth*9999999999 + (convolution_score(board,-player) / convolution_score(board,player))
+        return min(convolution_score(board,player) / convolution_score(board,-player),9999999998)
+    # if depth == 3:
+    #     score =  evaluate_board(board, -player) / convolution_score(board,player)
+    #     if start_score>score: # if current position is wors than start position
+    #         print("early cut off")
+    #         return score
+    # winner = get_winner(board)
+    # if winner != 0:
+    #     return -winner*player*depth*9999999999 + (convolution_score(board,-player) / convolution_score(board,player))
     V = -99999999
     # moves = get_immediate(board,idx)
     # temp = (get_moves(board, neighbours,20))
     # moves = (np.append(moves[0], temp[0]), np.append(moves[1], temp[1]))
     # idx = explore_convolve(board,player,10)
     # iss = np.random.randint(0,idx[0].shape[0],nmoves)
-    moves = get_moves(board, neighbours,20+5*depth)
+    moves = get_moves(board, neighbours,60)
+    # check if any move is terminal
+    for i in range(len(moves[0])):
+        move = (moves[0][i],moves[1][i])
+        board[move] = player
+        win = get_winner(board)
+        board[move] = 0
+        if win != 0:
+            return win*player*depth*depth*9999999999 + (convolution_score(board,-player) / convolution_score(board,player))
     for i in range(len(moves[0])):
         moven = np.array([moves[0][i],moves[1][i]])
         moven = moven[:, None]
@@ -343,10 +407,10 @@ def alpha_beta_prunning(board, neighbours,player, alpha, beta, depth, idx):
         # t = np.array((t[::2],t[1::2]))
         t = t[_t]
         t = (t[:,0], t[:,1])
-        neighbours[t] += 1
+        neighbours[t] += 4
         V = max(V,alpha_beta_prunning(board, neighbours, -player, -beta, -alpha, depth-1, t))
         board[move] = 0
-        neighbours[t] -= 1
+        neighbours[t] -= 4
         if V>=beta:
             return V
         alpha = max(alpha,V)
@@ -359,7 +423,7 @@ def solve(board,player, last_x, last_y):
     # player = -player
 
     remaining = 120 - len(np.where(board != 0)[0])
-    depth = min(remaining,6)
+    depth = min(remaining,4)
     # get neighbours
     neighbours = np.zeros(board.shape)
     # get the indexes of the empty cells
@@ -373,6 +437,7 @@ def solve(board,player, last_x, last_y):
     t = t[_t]
     t = (t[:,0], t[:,1])
     neighbours[t] += 1
+    # start_score = convolution_score(board,-player)/convolution_score(board,player)
     #display the neighbours
     print("neighbours")
     print(neighbours)
@@ -384,11 +449,30 @@ def solve(board,player, last_x, last_y):
     alpha = -np.Inf
     beta = np.Inf
     V= alpha
+    if len(np.where(score_board!=0)[0])>0:
+        moves = get_score_move(board,5)
+        temp = (get_moves(board, neighbours,15*15))
+        moves = (np.append(moves[0], temp[0]), np.append(moves[1], temp[1]))
+    else:
+        moves = get_moves(board, neighbours,15*15)
     # moves = get_immediate(board,(np.array([last_x]),np.array([last_y])))
     # temp = (get_moves(board, neighbours,15*15))
     # moves = (np.append(moves[0], temp[0]), np.append(moves[1], temp[1]))
     # moves = get_first_layer(board,neighbours)
-    moves = get_moves(board, neighbours,15*15)
+    
+    # check if any move is terminal
+    for i in range(len(moves[0])):
+        move = (moves[0][i],moves[1][i])
+        board[move] = player
+        if get_winner(board) != 0:
+            return (move[0],move[1])
+        board[move] = 0
+    for i in range(len(moves[0])):
+        move = (moves[0][i],moves[1][i])
+        board[move] = -player
+        if get_winner(board) != 0:
+            return (move[0],move[1])
+        board[move] = 0
     print("number of moves:", len(moves[0]), player)
     for i in range(len(moves[0])):
         moven = np.array([moves[0][i],moves[1][i]])
@@ -406,13 +490,15 @@ def solve(board,player, last_x, last_y):
         # t = np.array((t[::2],t[1::2]))
         t = t[_t]
         t = (t[:,0], t[:,1])
-        neighbours[t] += 1
+        neighbours[t] += 2
         #evaluate
         V = max(V, alpha_beta_prunning(board,neighbours,-player,-beta,-alpha,depth-1, t))
+        score_board[move]+=V
+        score_board[move]/=24
         print(i,"move: ", move, "score: ", V)
         #unplay
         board[move] = 0
-        neighbours[t] -= 1
+        neighbours[t] -= 2
         if V >= beta:
             best_x = move[0]
             best_y = move[1]

@@ -206,6 +206,7 @@ class App(tk.Tk):
                     temp[i][j]=-1
         start = time.time()
         t = nd.get_winner(np.array(temp))
+        # t = nd.winning_move(np.array(temp),np.array(history[-1]))
         stop = time.time()
         print(f"time taken for w: {stop-start}s", t)
         if t == 0:
