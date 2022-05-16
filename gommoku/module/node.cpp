@@ -321,10 +321,10 @@ void node::mcts(int board[15][15], int neightbours[15][15], int star[15][15],int
     // play our move
     // std::cout << "mcts "<<board[x][y]<<std::endl;
     if(parent != NULL) {
-    board[x][y] = player;
-    add_neighbour(x, y, neightbours);
-    // add_star(x, y, star);
-    // add_star(x, y, star);
+        board[x][y] = player;
+        add_neighbour(x, y, neightbours);
+        // add_star(x, y, star);
+        // add_star(x, y, star);
     }
     int winner = get_victor(board);
     // std::cout << "neighbours added and victor is: "<< winner<<std::endl;

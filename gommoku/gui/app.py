@@ -93,16 +93,17 @@ class App(tk.Tk):
         #     for j in range(15):
         #         temp.append(game_grid[(i,j)])
         # check if there is a move in teh history
-        temp=[[-1 for i in range(15)] for j in range(15)]
+        temp=[[0 for i in range(15)] for j in range(15)]
         for i in range(15):
             for j in range(15):
-                # temp.append(game_grid[(i,j)])
-                if game_grid[(i,j)] == -1:
-                    temp[i][j]=0
-                elif game_grid[(i,j)] == 0:
-                    temp[i][j]=1
-                elif game_grid[(i,j)] == 1:
-                    temp[i][j]=-1
+                temp.append(game_grid[(i,j)])
+                # if game_grid[(i,j)] == -1:
+                #     temp[i][j]=0
+                # elif game_grid[(i,j)] == 0:
+                #     temp[i][j]=1
+                # elif game_grid[(i,j)] == 1:
+                #     temp[i][j]=-1
+        print(temp)
         cp = 0
         if current_player == 0:
             cp = -1
@@ -119,9 +120,11 @@ class App(tk.Tk):
         # we play
         start = time.time()
         # (moves,(score,x,y)) = gm.solve(temp,current_player,pos[0],pos[1])
-        # (x,y) = gm.solve_mcts(temp,current_player)
+        k = gm.solve_mcts(temp,current_player)
+        print(type(k),k)
+        (x,y) = k
         # (x,y) = nd.Node.mcts(np.array(temp),np.array(temp.copy()),root)
-        (x,y) = nd.solve(np.array(temp),cp,pos[0],pos[1])
+        # (x,y) = nd.solve(np.array(temp),cp,pos[0],pos[1])
         stop = time.time()
         print(f"time taken : {stop-start}s")
         # print("move score is",score)
