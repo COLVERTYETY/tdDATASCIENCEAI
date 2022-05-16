@@ -372,7 +372,8 @@ int node::rootmove(int board[15][15], int neightbours[15][15], int star[15][15],
     std::cout<<"starting the root moove"<<std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     int iteration=0;
-    while (iteration<120000 && (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count()) < ms) {
+    // iteration<120000 &&
+    while ( (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count()) < ms) {
         mcts(board, neightbours, star, depth);
         iteration++;
         std::cout<<"\rit "<<iteration;

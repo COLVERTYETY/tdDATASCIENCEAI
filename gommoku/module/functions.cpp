@@ -605,7 +605,7 @@ static PyObject* solve_mcts(PyObject* self, PyObject* args) {
     root->isroot=1;
     // root = root->update_root(new_board, board, neighbour_count_0, neighbour_count_1, player);
     std::cout<<"remaining: "<<remaining<<std::endl;
-    int simulations = root->rootmove(board, neighbour_count_0, neighbour_count_1, 5000, remaining,&x, &y);
+    int simulations = root->rootmove(board, neighbour_count_0, neighbour_count_1, 4900, remaining,&x, &y);
     // int simulations = root->rootmove_max(board, neighbour_count_0, 5000, remaining, &x, &y);
     // display all moves pf children
     for(node* n : root->children){
@@ -614,7 +614,7 @@ static PyObject* solve_mcts(PyObject* self, PyObject* args) {
     std::cout<<"best x,y is: "<<x<<" "<<y<<std::endl;
     delete root;
     std::cout<< "number of simulations: " <<simulations<<std::endl;
-    return Py_BuildValue("ii", x, y);
+    return Py_BuildValue("(i,i)", x, y);
 }
 
 /// pythpn function to solve the game
